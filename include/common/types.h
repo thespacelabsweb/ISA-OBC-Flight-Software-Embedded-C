@@ -22,10 +22,11 @@
 
 /**
  * @brief Boolean type definition
+ * Note: Using BOOL_FALSE/BOOL_TRUE to avoid conflicts with Windows.h
  */
 typedef enum {
-    FALSE = 0,
-    TRUE = 1
+    BOOL_FALSE = 0,
+    BOOL_TRUE = 1
 } Bool;
 
 /**

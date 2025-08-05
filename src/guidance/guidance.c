@@ -61,7 +61,7 @@ Status Guidance_Initialize(
     
     /* Initialize guidance state */
     state->time = 0.0;
-    state->terminalPhaseActive = FALSE;
+    state->terminalPhaseActive = BOOL_FALSE;
     
     /* Calculate initial distance to target */
     Vector3 positionLocal = ECIToLocal(state->positionECI, originPosition, targetPosition);
@@ -153,7 +153,7 @@ Status Guidance_Execute(
     /* Check if we should switch to terminal phase - match MATLAB implementation */
     /* In MATLAB: if r <= r_loop3_start */
     if (distance <= state->simParams.terminalPhaseDistance && !state->terminalPhaseActive) {
-        state->terminalPhaseActive = TRUE;
+        state->terminalPhaseActive = BOOL_TRUE;
         printf("Entered terminal phase at t=%.2f s, distance=%.2f m\n", 
                state->time, distance);
     }
@@ -341,7 +341,7 @@ Vector3 Guidance_GetAccelerationCommandLocal(const GuidanceState* state) {
 
 Bool Guidance_IsTerminalPhaseActive(const GuidanceState* state) {
     if (state == NULL) {
-        return FALSE;
+        return BOOL_FALSE;
     }
     return state->terminalPhaseActive;
 }
