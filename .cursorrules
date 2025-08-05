@@ -1,0 +1,257 @@
+1. **Verify Information**: Always verify information before presenting it. Do not make assumptions or speculate without clear evidence.
+
+2. **File-by-File Changes**: Make changes file by file and give me a chance to spot mistakes.
+
+3. **No Apologies**: Never use apologies.
+
+4. **No Understanding Feedback**: Avoid giving feedback about understanding in comments or documentation.
+
+5. **No Whitespace Suggestions**: Don't suggest whitespace changes.
+
+6. **No Summaries**: Don't summarize changes made.
+
+7. **No Inventions**: Don't invent changes other than what's explicitly requested.
+
+8. **No Unnecessary Confirmations**: Don't ask for confirmation of information already provided in the context.
+
+9. **Preserve Existing Code**: Don't remove unrelated code or functionalities. Pay attention to preserving existing structures.
+
+10. **Single Chunk Edits**: Provide all edits in a single chunk instead of multiple-step instructions or explanations for the same file.
+
+11. **No Implementation Checks**: Don't ask the user to verify implementations that are visible in the provided context.
+
+12. **No Unnecessary Updates**: Don't suggest updates or changes to files when there are no actual modifications needed.
+
+13. **Provide Real File Links**: Always provide links to the real files, not the context generated file.
+
+14. **No Current Implementation**: Don't show or discuss the current implementation unless specifically requested.
+
+15. **Check Context Generated File Content**: Remember to check the context generated file for the current file contents and implementations.
+
+16. **Use Explicit Variable Names**: Prefer descriptive, explicit variable names over short, ambiguous ones to enhance code readability.
+
+17. **Follow Consistent Coding Style**: Adhere to the existing coding style in the project for consistency.
+
+18. **Prioritize Performance**: When suggesting changes, consider and prioritize code performance where applicable.
+
+19. **Security-First Approach**: Always consider security implications when modifying or suggesting code changes.
+
+20. **Test Coverage**: Suggest or include appropriate unit tests for new or modified code.
+
+21. **Error Handling**: Implement robust error handling and logging where necessary.
+
+22. **Modular Design**: Encourage modular design principles to improve code maintainability and reusability.
+
+23. **Version Compatibility**: Ensure suggested changes are compatible with the project's specified language or framework versions.
+
+24. **Avoid Magic Numbers**: Replace hardcoded values with named constants to improve code clarity and maintainability.
+
+25. **Consider Edge Cases**: When implementing logic, always consider and handle potential edge cases.
+
+26. **Use Assertions**: Include assertions wherever possible to validate assumptions and catch potential errors early.
+
+---
+
+description:
+globs: **/\*.c,**/_.h,\*\*/_.s,**/_.asm,Makefile,_.mk,_.ld,_.cfg,**/\*.inc
+alwaysApply: false
+
+---
+
+# Embedded C Programming Guidelines
+
+## Basic Principles
+
+- Use English for all code and documentation.
+- Always declare the type of each variable and function (parameters and return value).
+- Create necessary types and structures using typedef.
+- Use Doxygen style comments to document public functions and data structures.
+- Don't leave blank lines within a function.
+- Follow static analysis guidelines (MISRA-C when applicable).
+- Minimize memory footprint and optimize for performance.
+- Write deterministic code with predictable timing.
+
+## Nomenclature
+
+- Use PascalCase for typedefs and enums.
+- Use camelCase for variables and functions.
+- Use ALL_CAPS for constants, macros, and hardware registers.
+- Use snake_case for file and directory names.
+- Use UPPERCASE for preprocessor definitions and hardware-specific defines.
+- Prefix hardware-specific defines with module name (e.g., UART_STATUS_REG).
+- Avoid magic numbers and define constants with meaningful names.
+- Start each function with a verb.
+- Use verbs for boolean variables. Example: isReady, hasData, canTransmit, etc.
+- Use complete words instead of abbreviations and ensure correct spelling.
+  - Except for standard embedded abbreviations like GPIO, UART, SPI, I2C, PWM, ADC, DAC, etc.
+  - Except for well-known abbreviations:
+    - i, j, k for loops
+    - err for errors
+    - idx for index
+    - len for length
+    - ptr for pointers
+    - buf for buffers
+
+## Functions
+
+- Write short functions with a single purpose. Less than 50 lines for embedded systems.
+- Name functions with a verb and something else.
+- If it returns a boolean, use isX or hasX, canX, etc.
+- If it doesn't return anything (void), use executeX or initX, configX, etc.
+- Avoid deep nesting by:
+  - Early checks and returns.
+  - Extraction to utility functions.
+  - State machines for complex logic.
+- Use function pointers for callbacks and state machines.
+- Minimize function parameters (max 4-5 parameters).
+- Use structures to group related parameters.
+- Avoid recursion due to limited stack space.
+- Use static functions for module-internal functions.
+- Declare functions inline only when necessary for performance.
+
+## Data Management
+
+- Use appropriate data types for embedded systems:
+  - uint8_t, uint16_t, uint32_t for unsigned integers.
+  - int8_t, int16_t, int32_t for signed integers.
+  - bool for boolean values (include stdbool.h).
+- Avoid floating-point operations unless hardware supports FPU.
+- Use fixed-point arithmetic when precise calculations are needed.
+- Minimize global variables and use static when possible.
+- Use const for read-only data to place it in flash memory.
+- Use volatile for hardware registers and interrupt-shared variables.
+- Pack structures when interfacing with hardware or protocols.
+- Align data structures for optimal memory access.
+
+## Memory Management
+
+- Avoid dynamic memory allocation (malloc/free) in resource-constrained systems.
+- Use static allocation or stack-based allocation.
+- Implement memory pools for predictable memory usage.
+- Use circular buffers for data streaming.
+- Monitor stack usage and avoid stack overflow.
+- Place constant data in program memory (flash) using const.
+- Use memory-mapped I/O for hardware register access.
+- Implement bounds checking for arrays and buffers.
+
+## Hardware Abstraction
+
+- Create hardware abstraction layers (HAL) for portability.
+- Use register access macros for memory-mapped peripherals.
+- Group related hardware functions in separate modules.
+- Use bit manipulation macros for register operations:
+  - SET_BIT(reg, bit)
+  - CLEAR_BIT(reg, bit)
+  - TOGGLE_BIT(reg, bit)
+  - READ_BIT(reg, bit)
+- Define hardware-specific constants in header files.
+- Use unions for register bit-field access when appropriate.
+
+## Interrupts and Concurrency
+
+- Keep interrupt service routines (ISRs) short and fast.
+- Use volatile for variables shared between ISRs and main code.
+- Implement critical sections using interrupt disable/enable.
+- Use atomic operations when available.
+- Implement proper synchronization mechanisms:
+  - Semaphores for resource sharing.
+  - Message queues for inter-task communication.
+  - Circular buffers for producer-consumer scenarios.
+- Avoid blocking operations in ISRs.
+- Use state machines for complex interrupt-driven logic.
+
+## Error Handling
+
+- Define error codes as enums or macros.
+- Use return codes for error reporting in critical functions.
+- Implement watchdog timers for system reliability.
+- Use assertions for debugging (removable in production).
+- Log errors to appropriate output (UART, flash, etc.).
+- Implement graceful degradation for non-critical failures.
+- Use error propagation patterns consistently.
+
+## Power Management
+
+- Implement low-power modes when applicable.
+- Use sleep/idle modes during inactive periods.
+- Minimize peripheral usage to reduce power consumption.
+- Turn off unused peripherals and clocks.
+- Use interrupt-driven programming to avoid polling.
+- Implement power-aware algorithms.
+
+## Real-Time Considerations
+
+- Write deterministic code with predictable execution times.
+- Avoid operations with variable execution times in time-critical paths.
+- Use priority-based scheduling for multi-tasking systems.
+- Implement deadline monitoring for critical tasks.
+- Use hardware timers for precise timing requirements.
+- Minimize interrupt latency and jitter.
+
+## Testing and Debugging
+
+- Follow the Arrange-Act-Assert convention for unit tests.
+- Name test variables clearly: inputX, expectedX, actualX, etc.
+- Write unit tests for each public function where possible.
+- Use hardware-in-the-loop (HIL) testing for embedded validation.
+- Implement debug interfaces (UART, SWD, JTAG).
+- Use static analysis tools for code quality.
+- Implement runtime monitoring and diagnostics.
+- Use oscilloscopes and logic analyzers for hardware debugging.
+
+## Project Structure
+
+- Use modular architecture with clear interfaces.
+- Organize code into logical directories:
+  - include/ for header files
+  - src/ for source files
+  - drivers/ for hardware drivers
+  - hal/ for hardware abstraction layer
+  - tests/ for test files
+  - config/ for configuration files
+  - docs/ for documentation
+- Separate interface (.h) from implementation (.c).
+- Use include guards or #pragma once in header files.
+- Create layer-specific directories:
+  - bsp/ for board support package
+  - middleware/ for protocol stacks and services
+  - application/ for application logic
+
+## Build System and Configuration
+
+- Use Makefiles or CMake for build management.
+- Implement configuration management:
+  - Use #define for compile-time configuration.
+  - Create config.h for system-wide settings.
+  - Use conditional compilation for different targets.
+- Support multiple build configurations (debug, release, test).
+- Include linker scripts for memory layout definition.
+- Use version control for all source files and configurations.
+
+## Standards and Compliance
+
+- Follow MISRA-C guidelines when required.
+- Use static analysis tools (PC-lint, Cppcheck, etc.).
+- Implement coding standards consistently across the project.
+- Document deviations from standards with justification.
+- Use consistent formatting and indentation.
+- Follow safety standards (ISO 26262, IEC 61508) when applicable.
+
+## Performance Optimization
+
+- Profile code to identify bottlenecks.
+- Optimize critical paths for speed and memory usage.
+- Use compiler optimizations appropriately.
+- Implement efficient algorithms for embedded constraints.
+- Minimize function call overhead in tight loops.
+- Use lookup tables instead of complex calculations when appropriate.
+- Consider assembly language for performance-critical sections.
+
+## Documentation
+
+- Document hardware dependencies and requirements.
+- Create API documentation for public interfaces.
+- Document memory maps and register definitions.
+- Maintain change logs and version history.
+- Create user manuals and technical specifications.
+- Document build and deployment procedures.
