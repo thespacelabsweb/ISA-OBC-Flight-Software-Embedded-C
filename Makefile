@@ -13,12 +13,14 @@ TEST_DIR = test
 
 # Source files
 MATH_SRC = $(wildcard $(SRC_DIR)/math/*.c)
-GUIDANCE_SRC = $(wildcard $(SRC_DIR)/guidance/*.c)
-NAVIGATION_SRC = $(wildcard $(SRC_DIR)/navigation/*.c)
+# GUIDANCE_SRC = $(wildcard $(SRC_DIR)/guidance/*.c)
+# NAVIGATION_SRC = $(wildcard $(SRC_DIR)/navigation/*.c)
 DAP_SRC = $(wildcard $(SRC_DIR)/dap/*.c)
-SEQUENCER_SRC = $(wildcard $(SRC_DIR)/sequencer/*.c)
-HAL_SRC = $(wildcard $(SRC_DIR)/hal/*.c)
-MAIN_SRC = main.c
+# SEQUENCER_SRC = $(wildcard $(SRC_DIR)/sequencer/*.c)
+# HAL_SRC = $(wildcard $(SRC_DIR)/hal/*.c)
+# MAIN_SRC = main.c
+MAIN_SRC = main_DAP.c
+
 
 # Object files
 MATH_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(MATH_SRC))

@@ -16,7 +16,7 @@
 
 double previousPitchrate = 0.0;
 double previousYawrate =0.0;
-Status DAP_Execute(
+Vector3 DAP_Execute(
     double phi,
     double accelerationY,
     double accelerationZ,

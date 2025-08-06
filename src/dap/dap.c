@@ -10,8 +10,10 @@
 #include <math.h>
 #include "../../include/common/config.h"
 #include "../../include/dap/dap.h"
+#include "include/math/vector3.h"
 
-Status DAP_Execute(
+
+Vector3 DAP_Execute(
     double phi,
     double accelerationY,
     double accelerationZ,
