@@ -29,6 +29,12 @@ typedef enum {
 } Bool;
 
 /**
+ * @brief Compatibility defines for Bool values
+ */
+#define BOOL_FALSE FALSE
+#define BOOL_TRUE TRUE
+
+/**
  * @brief Status codes for function returns
  */
 typedef enum {
