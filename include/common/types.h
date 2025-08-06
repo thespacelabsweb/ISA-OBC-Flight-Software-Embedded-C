@@ -22,11 +22,10 @@
 
 /**
  * @brief Boolean type definition
- * Note: Using BOOL_FALSE/BOOL_TRUE to avoid conflicts with Windows.h
  */
 typedef enum {
-    BOOL_FALSE = 0,
-    BOOL_TRUE = 1
+    FALSE = 0,
+    TRUE = 1
 } Bool;
 
 /**
@@ -109,5 +108,26 @@ typedef struct {
     double minProjectileVelocity;   /* Minimum velocity threshold in m/s */
     double terminalPhaseDistance;   /* Distance to switch to terminal phase in meters */
 } SimulationParameters;
+
+/**
+ * @brief DAP parameters
+ */
+typedef struct {
+    double Kp_roll;
+    double Ki_roll;
+    double Kr_roll;
+    double IntegratorMinimum;
+    double IntegratorMaximum;
+    double phiMinimum;
+    double phiMaximum;
+    double Ks_pitch;
+    double Ka_pitch;
+    double Kr_pitch;
+    double Ks_yaw;
+    double Ka_yaw;
+    double Kr_yaw;
+    double c;
+} DAPParameters;
+
 
 #endif /* TYPES_H */
