@@ -66,7 +66,7 @@ double ComputeDeltaRollCommand(
  * 
  * @param accelerationY Current Y-axis acceleration in m/s^2
  * @param pitchRate Current pitch rate in rad/s
- * @param accelerationYCommand Commanded Y-axis acceleration in m/s^2
+ * @param accelerationYCommand Commanded Y-axis acceleration in m/s
  * @param dapParams DAP controller parameters
  * @param dt Time step in seconds
  * @return double Pitch control command
