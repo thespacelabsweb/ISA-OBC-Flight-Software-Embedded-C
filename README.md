@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ISA Flight Software is an embedded guidance system for a precision-guided projectile. The system follows a classic GNC (Guidance, Navigation, Control) architecture and is designed to run on an ATMEL SAM V71 microcontroller (ARM Cortex-M7 with FPU).
+ISA Flight Software is an embedded system for a precision-guided projectile. The system follows a classic GNC (Guidance, Navigation, Control) architecture and is designed to run on an ATMEL SAM V71 microcontroller (ARM Cortex-M7 with FPU).
 
 The software consists of four primary modules:
 
