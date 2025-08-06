@@ -10,7 +10,7 @@
 #include <math.h>
 #include "../../include/common/config.h"
 #include "../../include/dap/dap.h"
-#include "include/math/vector3.h"
+#include "../../include/math/vector3.h"
 
 
 Vector3 DAP_Execute(
@@ -30,7 +30,8 @@ Vector3 DAP_Execute(
     double deltar = ComputeDeltaRollCommand(phi, rollRate, intr, dapParams, timeStep);
     double deltap = ComputeDeltaPitchCommand(accelerationY, pitchRate, accelerationYCommand, dapParams, timeStep);
     double deltay = ComputeDeltaYawCommand(accelerationZ, yawRate, accelerationZCommand, dapParams, timeStep);
-    Vector3 output(deltar,deltap,deltay);
+    Vector3 output = Vector3_Create(deltar,deltap,deltay);
+    return output;
 }
 
 double ComputeDeltaRollCommand(double phi, double rollRate, double intr, DAPParameters dapParams, double timeStep) 
