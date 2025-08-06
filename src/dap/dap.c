@@ -10,32 +10,34 @@
 #include <math.h>
 #include "../../include/common/config.h"
 #include "../../include/dap/dap.h"
+#include "include/math/vector3.h"
 
-Status DAP_Execute(
+
+Vector3 DAP_Execute(
     double phi,
-    double accy,
-    double accz,
+    double accelerationY,
+    double accelerationZ,
     double rollRate,
     double pitchRate,
     double yawRate,
-    double accyCommand,
-    double acczCommand, DAPParameters dapParams, double timeStep
+    double accelerationYCommand,
+    double accelerationZCommand, DAPParameters dapParams, double timeStep
 ) 
 
 {
     // Initialize
     float intr=0.0; // initialize
     double deltar = ComputeDeltaRollCommand(phi, rollRate, intr, dapParams, timeStep);
-    double deltap = ComputeDeltaPitchCommand(accy, pitchRate, accyCommand, dapParams, timeStep);
-    double deltay = ComputeDeltaYawCommand(accz, yawRate, acczCommand, dapParams, timeStep);
+    double deltap = ComputeDeltaPitchCommand(accelerationY, pitchRate, accelerationYCommand, dapParams, timeStep);
+    double deltay = ComputeDeltaYawCommand(accelerationZ, yawRate, accelerationZCommand, dapParams, timeStep);
 }
 
 double ComputeDeltaRollCommand(double phi, double rollRate, double intr, DAPParameters dapParams, double timeStep) 
 {
-    double phiCommand =0.0; // assuming roll command is zero
+    double phiCommand =0.0; /* assuming roll command is zero */ 
     float phiErr = phiCommand - phi;
     float phiLimit;
-    if (phiErr < dapParams.phiMinimum) 
+    if (phiErr < dapParams.phiMinimum) /* rate limiter */
     {
         phiLimit = dapParams.phiMinimum;
     } else if (phiErr > dapParams.phiMaximum) 
@@ -58,18 +60,20 @@ double ComputeDeltaRollCommand(double phi, double rollRate, double intr, DAPPara
     return deltaCommandRoll;
 }
 
-double ComputeDeltaPitchCommand(double accy, double pitchRate, double accelerationYCommand, DAPParameters dapParams, double timeStep) 
+double ComputeDeltaPitchCommand(double accelerationY, double pitchRate, double accelerationYCommand, DAPParameters dapParams, double timeStep) 
 {
-    float qDot=0.0; // derivative of pitch rate 
-    float accErrorPitch = accelerationYCommand - (dapParams.Kr_pitch*pitchRate)-((accy+dapParams.c*qDot)*dapParams.Ka_pitch);
-
+    float currentPitchrate = pitchRate; /* current pitch rate */ 
+    float qDot=(currentPitchrate-previousPitchrate)/timeStep; /* derivative of pitch rate */ 
+    float accErrorPitch = accelerationYCommand - (dapParams.Kr_pitch*pitchRate)-((accelerationY+dapParams.c*qDot)*dapParams.Ka_pitch);
+    previousPitchrate = currentPitchrate; /* update previous pitch rate */ 
     float deltaCommandPitch = accErrorPitch*dapParams.Ks_pitch;
 }
 
-double ComputeDeltaYawCommand(double accz, double yawRate, double accelerationZCommand, DAPParameters dapParams, double timeStep) 
+double ComputeDeltaYawCommand(double accelerationZ, double yawRate, double accelerationZCommand, DAPParameters dapParams, double timeStep) 
 {
-    float rDot=0.0; // derivative of yaw rate 
-    float accErrorYaw = accelerationZCommand - (dapParams.Kr_pitch*yawRate)-((accz+dapParams.c*rDot)*dapParams.Ka_pitch);
-
-    float deltaCommandYaw = accErrorYaw*dapParams.Ks_pitch;
+    float currentYawrate = yawRate; /* current yaw rate */ 
+    float rDot=(currentYawrate-previousYawrate)/timeStep; /* derivative of pitch rate */
+    float accErrorYaw = accelerationZCommand - (dapParams.Kr_yaw*yawRate)-((accelerationZ+dapParams.c*rDot)*dapParams.Ka_yaw);
+    previousYawrate = currentYawrate; /* update previous yaw rate */ 
+    float deltaCommandYaw = accErrorYaw*dapParams.Ks_yaw;
 }

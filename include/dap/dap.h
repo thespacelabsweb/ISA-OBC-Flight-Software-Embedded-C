@@ -14,20 +14,21 @@
  * @brief DAP module 
  */
 
-double prevrDot = 0.0;
-Status DAP_Execute(
+double previousPitchrate = 0.0;
+double previousYawrate =0.0;
+Vector3 DAP_Execute(
     double phi,
-    double accy,
-    double accz,
+    double accelerationY,
+    double accelerationZ,
     double rollRate,
     double pitchRate,
     double yawRate,
-    double accyCommand,
-    double acczCommand, DAPParameters dapParams, double timeStep
+    double accelerationYCommand,
+    double accelerationZCommand, DAPParameters dapParams, double timeStep
 ) ;
 double ComputeDeltaRollCommand(double phi, double rollRate, double intr, DAPParameters dapParams, double dt); 
-double ComputeDeltaPitchCommand(double accy, double pitchRate, double accelerationYCommand, DAPParameters dapParams, double dt); 
-double ComputeDeltaYawCommand(double accz, double yawRate, double accelerationZCommand, DAPParameters dapParams, double dt);
+double ComputeDeltaPitchCommand(double accelerationY, double pitchRate, double accelerationYCommand, DAPParameters dapParams, double dt); 
+double ComputeDeltaYawCommand(double accelerationZ, double yawRate, double accelerationZCommand, DAPParameters dapParams, double dt);
 
 
 #endif /* DAP_H */

@@ -113,21 +113,23 @@ typedef struct {
  * @brief DAP parameters
  */
 typedef struct {
-    double Kp_roll;
-    double Ki_roll;
-    double Kr_roll;
-    double IntegratorMinimum;
-    double IntegratorMaximum;
-    double phiMinimum;
-    double phiMaximum;
-    double Ks_pitch;
-    double Ka_pitch;
-    double Kr_pitch;
-    double Ks_yaw;
-    double Ka_yaw;
-    double Kr_yaw;
-    double c;
+    /* Roll controller constants */  
+    double Kp_roll; /* Proportional gain for roll */  
+    double Ki_roll; /* Integrator gain for roll */ 
+    double Kr_roll; /* Rate gain for roll */  
+    double IntegratorMinimum; /* Integrator min limit - roll */ 
+    double IntegratorMaximum; /* Integrator max limit - roll */ 
+    double phiMinimum;  /* Roll min limit */ 
+    double phiMaximum;  /* Roll max limit */ 
+    /* Pitch controller constants */
+    double Ks_pitch; /* Proportional gain for pitch */
+    double Ka_pitch; /* Acceleration gain for pitch */
+    double Kr_pitch; /* Rate gain for pitch */
+    /* Yaw controller constants */
+    double Ks_yaw; /* Proportional gain for Yaw */
+    double Ka_yaw; /* Acceleration gain for Yaw */
+    double Kr_yaw; /* Rate gain for Yaw */
+    double c; /* Distance between IMU and CG */
 } DAPParameters;
-
-
+     
 #endif /* TYPES_H */
