@@ -10,7 +10,7 @@
 #include <math.h>
 #include "../../include/common/config.h"
 #include "../../include/dap/dap.h"
-#include "include/math/vector3.h"
+#include "../../include/math/vector3.h"
 
 
 Vector3 DAP_Execute(
@@ -30,6 +30,8 @@ Vector3 DAP_Execute(
     double deltar = ComputeDeltaRollCommand(phi, rollRate, intr, dapParams, timeStep);
     double deltap = ComputeDeltaPitchCommand(accelerationY, pitchRate, accelerationYCommand, dapParams, timeStep);
     double deltay = ComputeDeltaYawCommand(accelerationZ, yawRate, accelerationZCommand, dapParams, timeStep);
+    Vector3 output = Vector3_Create(deltar,deltap,deltay);
+    return output;
 }
 
 double ComputeDeltaRollCommand(double phi, double rollRate, double intr, DAPParameters dapParams, double timeStep) 
@@ -67,6 +69,7 @@ double ComputeDeltaPitchCommand(double accelerationY, double pitchRate, double a
     float accErrorPitch = accelerationYCommand - (dapParams.Kr_pitch*pitchRate)-((accelerationY+dapParams.c*qDot)*dapParams.Ka_pitch);
     previousPitchrate = currentPitchrate; /* update previous pitch rate */ 
     float deltaCommandPitch = accErrorPitch*dapParams.Ks_pitch;
+    return deltaCommandPitch;
 }
 
 double ComputeDeltaYawCommand(double accelerationZ, double yawRate, double accelerationZCommand, DAPParameters dapParams, double timeStep) 
@@ -76,4 +79,5 @@ double ComputeDeltaYawCommand(double accelerationZ, double yawRate, double accel
     float accErrorYaw = accelerationZCommand - (dapParams.Kr_yaw*yawRate)-((accelerationZ+dapParams.c*rDot)*dapParams.Ka_yaw);
     previousYawrate = currentYawrate; /* update previous yaw rate */ 
     float deltaCommandYaw = accErrorYaw*dapParams.Ks_yaw;
+    return deltaCommandYaw;
 }
