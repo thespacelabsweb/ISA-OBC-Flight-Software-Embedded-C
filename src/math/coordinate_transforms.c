@@ -4,7 +4,7 @@
  * File: coordinate_transforms.c
  * Description: Implementation of coordinate transformation functions
  *****************************************************************************/
-
+#include <stddef.h> 
 #include <math.h>
 #include "../../include/math/coordinate_transforms.h"
 #include "../../include/common/config.h"
