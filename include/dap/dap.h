@@ -8,26 +8,10 @@
 #ifndef DAP_H
 #define DAP_H
 
-#include "../common/types.h"
+/* This file is a placeholder for the DAP module interface */
+/* It will be implemented when the DAP team completes their work */
 
-/**
- * @brief DAP module 
- */
-
-double prevPhiDot = 0.0;
-Status DAP_Execute(
-    double phi,
-    double accy,
-    double accz,
-    double rollRate,
-    double pitchRate,
-    double yawRate,
-    double accyCommand,
-    double acczCommand, DAPParameters dapParams, double timeStep
-) ;
-double ComputeDeltaRollCommand(double phi, double rollRate, double intr, DAPParameters dapParams, double dt); 
-double ComputeDeltaPitchCommand(double accy, double pitchRate, double accelerationYCommand, DAPParameters dapParams, double dt); 
-double ComputeDeltaYawCommand(double accz, double yawRate, double accelerationZCommand, DAPParameters dapParams, double dt);
-
+/* Dummy function to avoid empty translation unit error */
+void DAP_Placeholder(void);
 
 #endif /* DAP_H */
