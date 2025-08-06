@@ -14,7 +14,7 @@
  * @brief DAP module 
  */
 
-double prevPhiDot = 0.0;
+double prevrDot = 0.0;
 Status DAP_Execute(
     double phi,
     double accy,
