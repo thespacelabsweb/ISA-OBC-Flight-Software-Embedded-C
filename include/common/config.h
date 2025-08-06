@@ -61,4 +61,24 @@ static const SimulationParameters SIMULATION_DEFAULT = {
     .terminalPhaseDistance = 100.0 /* Distance to switch to terminal phase in meters */
 };
 
+static const DAPParameters DAP_DEFAULT = {
+    /* Roll controller constants */  
+   .Kp_roll =  11.8899,  /* Proportional gain for roll */    
+   .Ki_roll = 2.0, /* Integrator gain for roll */       
+   .Kr_roll = 0.0841,  /* Rate gain for roll */  
+   .IntegratorMinimum= -0.5, /* Integrator min limit - roll */ 
+   .IntegratorMaximum = 0.5, /* Integrator max limit - roll */ 
+   .phiMinimum= -0.014677,  /* Roll min limit */ 
+   .phiMaximum=  0.014677, /* Roll max limit */ 
+   /* Pitch controller constants */
+   .Ks_pitch =  11.8899,  /* Proportional gain for pitch */
+   .Ka_pitch = 2.0, /* Acceleration gain for pitch */
+   .Kr_pitch = 0.0841,  /* Rate gain for pitch */
+   /* Yaw controller constants */
+   .Ks_yaw =  11.8899,  /* Proportional gain for Yaw */
+   .Ka_yaw = 2.0, /* Acceleration gain for Yaw */
+   .Kr_yaw = 0.0841,  /* Rate gain for Yaw */
+   .c= 0.0, /* Distance between IMU and CG */
+};
+
 #endif /* CONFIG_H */
