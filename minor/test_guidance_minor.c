@@ -1,7 +1,7 @@
 /******************************************************************************
  * ISA Flight Software - Guidance Memory Management Test
  * 
- * File: test_guidance_memory_cycles.c
+ * File: test_guidance_minor.c
  * Description: Standalone test for guidance module memory management with
  *              major (100ms) and minor (10ms) cycle timing
  * 
