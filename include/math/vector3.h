@@ -30,7 +30,7 @@ typedef struct {
  * @param c The z component
  * @return Vector3 The initialized vector
  */
-Vector3 Vector3_Create(double a, double b, double c);
+Vector3 Vector3_Create(float a, float b, float c);
 
 /**
  * @brief Add two vectors

@@ -9,7 +9,7 @@
 #include <math.h>
 #include "../../include/math/vector3.h"
 
-Vector3 Vector3_Create(double a, double b, double c) {
+Vector3 Vector3_Create(float a, float b, float c) {
     Vector3 result;
     result.a = a;
     result.b = b;
