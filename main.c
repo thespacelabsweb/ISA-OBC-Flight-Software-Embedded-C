@@ -3,6 +3,11 @@
  * 
  * File: main.c
  * Description: Main entry point for the guidance system test
+
+
+ Just a implementation of the guidance system  from matlab to C. not final
+ for the final implementation, we will use the guidance system from the guidance folder.
+ to see the updates check the test/guidance folder.
  *****************************************************************************/
 
 #include <stdio.h>

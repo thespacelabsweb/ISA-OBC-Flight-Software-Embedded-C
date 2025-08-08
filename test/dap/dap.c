@@ -7,9 +7,9 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "../../include/common/config.h"
-#include "../../include/dap/dap.h"
-#include "../../include/math/vector3.h"
+#include "common/config.h"
+#include "dap.h"
+#include "math/vector3.h"
 
 /* Module-level variables for rate derivative calculations */
 static float previousPitchrate = 0.0;

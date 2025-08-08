@@ -8,8 +8,8 @@
 #ifndef DAP_H
 #define DAP_H
 
-#include "../common/types.h"
-#include "../math/vector3.h"
+#include "common/types.h"
+#include "math/vector3.h"
 
 /**
  * @brief DAP module interface for flight control

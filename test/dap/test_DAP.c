@@ -7,10 +7,10 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "include/common/types.h"
-#include "include/common/config.h"
-#include "include/dap/dap.h"
-#include "include/math/vector3.h"
+#include "common/types.h"
+#include "common/config.h"
+#include "dap.h"
+#include "math/vector3.h"
 
 int main(void) {
     /* Test input values */
