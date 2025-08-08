@@ -31,16 +31,16 @@
  * @return Vector3 Control commands for roll, pitch, and yaw
  */
 Vector3 DAP_Execute(
-    double phi,
-    double accelerationY,
-    double accelerationZ,
-    double rollRate,
-    double pitchRate,
-    double yawRate,
-    double accelerationYCommand,
-    double accelerationZCommand, 
+    float phi,
+    float accelerationY,
+    float accelerationZ,
+    float rollRate,
+    float pitchRate,
+    float yawRate,
+    float accelerationYCommand,
+    float accelerationZCommand, 
     DAPParameters dapParams, 
-    double timeStep
+    float timeStep
 );
 
 /**
@@ -51,14 +51,14 @@ Vector3 DAP_Execute(
  * @param intr Current integrator value
  * @param dapParams DAP controller parameters
  * @param dt Time step in seconds
- * @return double Roll control command
+ * @return float Roll control command
  */
-double ComputeDeltaRollCommand(
-    double phi, 
-    double rollRate, 
-    double intr, 
+float ComputeDeltaRollCommand(
+    float phi, 
+    float rollRate, 
+    float intr, 
     DAPParameters dapParams, 
-    double dt
+    float dt
 );
 
 /**
@@ -69,14 +69,14 @@ double ComputeDeltaRollCommand(
  * @param accelerationYCommand Commanded Y-axis acceleration in m/s
  * @param dapParams DAP controller parameters
  * @param dt Time step in seconds
- * @return double Pitch control command
+ * @return float Pitch control command
  */
-double ComputeDeltaPitchCommand(
-    double accelerationY, 
-    double pitchRate, 
-    double accelerationYCommand, 
+float ComputeDeltaPitchCommand(
+    float accelerationY, 
+    float pitchRate, 
+    float accelerationYCommand, 
     DAPParameters dapParams, 
-    double dt
+    float dt
 );
 
 /**
@@ -87,14 +87,14 @@ double ComputeDeltaPitchCommand(
  * @param accelerationZCommand Commanded Z-axis acceleration in m/s^2
  * @param dapParams DAP controller parameters
  * @param dt Time step in seconds
- * @return double Yaw control command
+ * @return float Yaw control command
  */
-double ComputeDeltaYawCommand(
-    double accelerationZ, 
-    double yawRate, 
-    double accelerationZCommand, 
+float ComputeDeltaYawCommand(
+    float accelerationZ, 
+    float yawRate, 
+    float accelerationZCommand, 
     DAPParameters dapParams, 
-    double dt
+    float dt
 );
 
 #endif /* DAP_H */

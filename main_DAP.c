@@ -14,15 +14,15 @@
 
 int main(void) {
     /* Test input values */
-    double phi = 2.0;                /* Roll angle in radians */
-    double accelerationY = 0.1;      /* Y-axis acceleration in m/s^2 */
-    double accelerationZ = 0.1;      /* Z-axis acceleration in m/s^2 */
-    double rollRate = 2.0 * 2.0 * PI;  /* Roll rate in rad/s */
-    double pitchRate = 20.0 * PI / 180.0; /* Pitch rate in rad/s */
-    double yawRate = 20.0 * PI / 180.0;   /* Yaw rate in rad/s */
-    double accelerationYCommand = 0.0; /* Commanded Y-axis acceleration */
-    double accelerationZCommand = 0.0; /* Commanded Z-axis acceleration */
-    double timeStep = 0.1;           /* Time step in seconds */
+    float phi = 1.0;                /* Roll angle in radians */
+    float accelerationY = 0.1;      /* Y-axis (pitch) acceleration in m/s^2 */
+    float accelerationZ = 0.1;      /* Z-axis (yaw) acceleration in m/s^2 */
+    float rollRate = 20.0 * PI / 180.0;  /* Roll rate in rad/s */
+    float pitchRate = 20.0; /* Pitch rate in rad/s */
+    float yawRate = 20.0 ;   /* Yaw rate in rad/s */
+    float accelerationYCommand = 0.4; /* Commanded Y-axis acceleration */
+    float accelerationZCommand = 0.4; /* Commanded Z-axis acceleration */
+    float timeStep = 0.1;           /* Time step in seconds */
     
     /* Use default DAP parameters */
     DAPParameters dapParams = DAP_DEFAULT;
