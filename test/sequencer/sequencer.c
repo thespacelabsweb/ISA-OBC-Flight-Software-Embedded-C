@@ -1,3 +1,10 @@
+/* Define POSIX feature test macro for nanosleep/timespec on POSIX systems */
+#ifndef _WIN32
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 199309L
+#endif
+#endif
+
 /******************************************************************************
  * ISA Flight Software
  *
@@ -10,6 +17,9 @@
 #include <math.h>
 #include <stdint.h>
 #include <time.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 #include "common/types.h"
 #include "sequencer/sequencer.h"
