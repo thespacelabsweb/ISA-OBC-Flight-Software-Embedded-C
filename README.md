@@ -38,15 +38,15 @@ ISA Flight Software/
     - math/             # Mathematical utilities implementation
     - navigation/       # Navigation module implementation
     - sequencer/        # Sequencer module implementation
-  - test/               # Test files
-  - instruction/        # Documentation
-  - requirement_doc/    # Requirement documents
-  - reference code/     # Reference code (MATLAB, C++)
+  - test/               # Unit Test per module and its make files
+    - dap/              # Digital Autopilot implementation
+    - guidance/         # Guidance module implementation
+    - hal/              # Hardware Abstraction Layer implementation
+    - math/             # Mathematical utilities implementation
+    - navigation/       # Navigation module implementation
+    - sequencer/            # Test files
   - main.c              # Main entry point for full system simulation
-  - main_DAP.c          # Main entry point for DAP module test
   - Makefile            # Build script for the full system
-  - Makefile.dap        # Build script for DAP module test
-  - Makefile.sequencer  # Build script for Sequencer module test
 ```
 
 ## Building and Running on PC
@@ -58,6 +58,8 @@ ISA Flight Software/
 - Math library (libm)
 
 ### Building the Full System
+
+### Each Test folder is created in such a way is that, unit tests can be executed as standalone modules
 
 ```bash
 make
@@ -78,22 +80,25 @@ This will build (if needed) and then run the executable.
 #### Guidance Module Test
 
 ```bash
-make -f Makefile.guidance
-./build/guidance_test
+Go to the folder directory with cd test\guidance
+make
+make run
 ```
 
 #### DAP Module Test
 
 ```bash
-make -f Makefile.dap
-./build/dap_test
+Go to the folder directory with cd test\dap
+make
+make run
 ```
 
 #### Sequencer Module Test
 
 ```bash
-make -f Makefile.sequencer
-./build/sequencer_test
+Go to the folder directory with cd test\sequencer
+make
+make run
 ```
 
 ### Running Unit Tests
