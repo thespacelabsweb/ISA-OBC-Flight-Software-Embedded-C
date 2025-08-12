@@ -17,7 +17,7 @@ static Vector3 CalculateDesiredImpactDirection(double thetaF, double psiF) {
         cos(thetaF) * cos(psiF),
         cos(thetaF) * sin(psiF),
         sin(thetaF)
-    );
+);
 }
 
 Status Guidance_Initialize(

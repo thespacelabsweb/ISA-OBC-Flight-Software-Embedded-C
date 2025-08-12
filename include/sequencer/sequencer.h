@@ -34,8 +34,10 @@ typedef struct {
     double rollRateThreshold1;        /* Threshold for T1 (canard deployment) in rps */
     double rollRateThreshold2;        /* Threshold for T2 (roll control) in rps */
     double rollRateThreshold3;        /* Threshold for IMU-in-loop in rps */
-    double windowStartOffset;         /* Sensing window start offset (seconds) */
-    double windowDuration;            /* Sensing window duration (seconds) */
+    double windowStartOffset;         /* Sensing window start offset (seconds) for T1/T2 */
+    double windowDuration;            /* Sensing window duration (seconds) for T1/T2 */
+    double t3WindowStartOffset;       /* Sensing window start offset (seconds) for T3 */
+    double t3WindowDuration;          /* Sensing window duration (seconds) for T3 */
     int    consecutiveChecksRequired; /* Number of consecutive checks to validate condition */
     double proximityTimeBeforeTarget; /* Time before target to enable proximity (seconds) */
 } SequencerConfig;

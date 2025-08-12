@@ -35,6 +35,15 @@ static SequencerStatus g_status;
 static double g_simulatedRollRateRps = 0.0;
 static Bool   g_simulatedGT3Flag = FALSE;
 
+/* Consecutive detection counters */
+static int g_t1ConsecutiveCount = 0;
+static int g_imuConsecutiveCount = 0;
+static int g_t2ConsecutiveCount = 0;
+static int g_t3ConsecutiveCount = 0;
+
+/* Timing constants (test harness) */
+static const double GUIDANCE_INIT_DELAY_SEC = 2.0; /* T2 + 2s */
+
 /*----------------------------------------------------------------------------*/
 /* Internal utilities                                                         */
 /*----------------------------------------------------------------------------*/
@@ -46,9 +55,11 @@ static void setDefaultConfig(SequencerConfig* config)
     config->rollRateThreshold1 = 7.0;     /* T1 (canard deploy) threshold */
     config->rollRateThreshold2 = 2.0;     /* T2 (roll control) threshold */
     config->rollRateThreshold3 = 5.0;     /* IMU-in-loop message threshold */
-    config->windowStartOffset = 0.0;
-    config->windowDuration = 0.0;
-    config->consecutiveChecksRequired = 1;
+    config->windowStartOffset = 0.1;      /* Window opens 0.1 s after anchor */
+    config->windowDuration = 5.0;         /* Window lasts 5.0 s */
+    config->t3WindowStartOffset = 0.1;    /* T3 window opens 0.1 s after T2 */
+    config->t3WindowDuration = 5.0;       /* T3 window lasts 5.0 s */
+    config->consecutiveChecksRequired = 3;/* Require 3 consecutive cycles */
     config->proximityTimeBeforeTarget = 5.0; /* Default placeholder */
 }
 
@@ -74,6 +85,20 @@ static void resetStatus(SequencerStatus* status)
 static void printStateTransition(const char* message)
 {
     printf(" [sequence] %s\n", message);
+}
+
+static Bool isWithinWindow(double currentTime, double anchorTime)
+{
+    const double startTime = anchorTime + g_config.windowStartOffset;
+    const double endTime = startTime + g_config.windowDuration;
+    return (currentTime >= startTime) && (currentTime <= endTime) ? TRUE : FALSE;
+}
+
+static Bool isWithinT3Window(double currentTime, double anchorTime)
+{
+    const double startTime = anchorTime + g_config.t3WindowStartOffset;
+    const double endTime = startTime + g_config.t3WindowDuration;
+    return (currentTime >= startTime) && (currentTime <= endTime) ? TRUE : FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -109,37 +134,85 @@ Status Sequencer_Execute(double timeStep)
     /* Read simulated inputs */
     const double rollRateRps = g_simulatedRollRateRps;
 
-    /* T1: IMU loop and canard deployment criteria (roll rate < threshold1) */
-    if (rollRateRps < g_config.rollRateThreshold1 && g_status.imuInLoopFlag == FALSE)
+    /*
+     * T1 window: from T0 + offset to T0 + offset + duration
+     * Condition: roll rate < 7 rps for N consecutive cycles
+     * Action: set FSA flag, mark T1 time/state
+     */
+    if (g_status.t1Time == 0.0)
     {
-        g_status.imuInLoopFlag = TRUE;
-        g_status.t1Time = g_status.missionTime;
-        g_status.state = SEQ_STATE_T1_REACHED;
-        printStateTransition("[Canard Deployment] Roll Rate < 7 RPS");
-    }
-
-    /* Informational message around threshold3 while IMU loop is active */
-    if (rollRateRps < g_config.rollRateThreshold3 && g_status.imuInLoopFlag == TRUE)
-    {
-        /* No state change, informational */
-        /* Optional: throttle prints if integrating with real-time system */
-        /* Here, print sparingly when crossing threshold3 */
-        static Bool printedThreshold3 = FALSE;
-        if (printedThreshold3 == FALSE)
+        if (isWithinWindow(g_status.missionTime, g_status.t0Time))
         {
-            printStateTransition("[IMU LOOP] Roll Rate < 5 RPS");
-            printedThreshold3 = TRUE;
+            if (rollRateRps < g_config.rollRateThreshold1)
+            {
+                g_t1ConsecutiveCount++;
+                if (g_t1ConsecutiveCount >= g_config.consecutiveChecksRequired)
+                {
+                    g_status.t1Time = g_status.missionTime;
+                    g_status.fsaFlag = TRUE;
+                    g_status.state = SEQ_STATE_T1_REACHED;
+                    printStateTransition("[Canard Deployment] Roll Rate < 7 RPS (T1), flag to FSA");
+                }
+            }
+            else
+            {
+                g_t1ConsecutiveCount = 0;
+            }
+        }
+        else
+        {
+            g_t1ConsecutiveCount = 0;
         }
     }
 
-    /* T2: Enable roll control when roll rate < threshold2 */
-    if (rollRateRps < g_config.rollRateThreshold2 && g_status.rollControlActive == FALSE)
+    /* IMU in loop: roll rate < 5 rps for N consecutive cycles (independent flag) */
+    if (g_status.imuInLoopFlag == FALSE)
     {
-        g_status.rollControlActive = TRUE;
-        g_status.dapFlag = TRUE;
-        g_status.t2Time = g_status.missionTime;
-        g_status.state = SEQ_STATE_T2_REACHED;
-        printStateTransition("ROLL CONTROL ON (T2 Activated)");
+        if (rollRateRps < g_config.rollRateThreshold3)
+        {
+            g_imuConsecutiveCount++;
+            if (g_imuConsecutiveCount >= g_config.consecutiveChecksRequired)
+            {
+                g_status.imuInLoopFlag = TRUE;
+                printStateTransition("[IMU LOOP] Roll Rate < 5 RPS (active)");
+            }
+        }
+        else
+        {
+            g_imuConsecutiveCount = 0;
+        }
+    }
+
+    /*
+     * T2 window: from T1 + offset to T1 + offset + duration
+     * Condition: roll rate < 2 rps for N consecutive cycles
+     * Action: DAP flag, roll control ON, mark T2 time/state
+     */
+    if (g_status.t1Time > 0.0 && g_status.t2Time == 0.0)
+    {
+        if (isWithinWindow(g_status.missionTime, g_status.t1Time))
+        {
+            if (rollRateRps < g_config.rollRateThreshold2)
+            {
+                g_t2ConsecutiveCount++;
+                if (g_t2ConsecutiveCount >= g_config.consecutiveChecksRequired)
+                {
+                    g_status.rollControlActive = TRUE;
+                    g_status.dapFlag = TRUE;
+                    g_status.t2Time = g_status.missionTime;
+                    g_status.state = SEQ_STATE_T2_REACHED;
+                    printStateTransition("ROLL CONTROL ON (T2 Activated)");
+                }
+            }
+            else
+            {
+                g_t2ConsecutiveCount = 0;
+            }
+        }
+        else
+        {
+            g_t2ConsecutiveCount = 0;
+        }
     }
 
     /* Pitch/Yaw enable after dt4 seconds from T2 */
@@ -153,10 +226,10 @@ Status Sequencer_Execute(double timeStep)
         }
     }
 
-    /* Guidance enable after 5 seconds from T2 (per reference behavior) */
+    /* Guidance enable after 2 seconds from T2 (per requirements) */
     if (g_status.rollControlActive == TRUE && g_status.guidanceActive == FALSE)
     {
-        if ((g_status.missionTime - g_status.t2Time) >= 5.0)
+        if ((g_status.missionTime - g_status.t2Time) >= GUIDANCE_INIT_DELAY_SEC)
         {
             g_status.guidanceActive = TRUE;
             g_status.state = SEQ_STATE_GUIDANCE_ON;
@@ -164,10 +237,35 @@ Status Sequencer_Execute(double timeStep)
         }
     }
 
-    /* Placeholder: proximity and terminal logic could be added when targets available */
-    if (g_simulatedGT3Flag == TRUE)
+    /*
+     * T3 window: from T2 + offset to T2 + offset + duration
+     * Condition: receive GT3 flag for N consecutive cycles
+     * Action: mark T3 time/state, enable proximity
+     */
+    if (g_status.t2Time > 0.0 && g_status.t3Time == 0.0)
     {
-        g_status.proximityActive = TRUE;
+        if (isWithinT3Window(g_status.missionTime, g_status.t2Time))
+        {
+            if (g_simulatedGT3Flag == TRUE)
+            {
+                g_t3ConsecutiveCount++;
+                if (g_t3ConsecutiveCount >= g_config.consecutiveChecksRequired)
+                {
+                    g_status.t3Time = g_status.missionTime;
+                    g_status.proximityActive = TRUE;
+                    g_status.state = SEQ_STATE_T3_REACHED;
+                    printStateTransition("Proximity Sensor Enabled (T3 REACHED)");
+                }
+            }
+            else
+            {
+                g_t3ConsecutiveCount = 0;
+            }
+        }
+        else
+        {
+            g_t3ConsecutiveCount = 0;
+        }
     }
 
     return STATUS_OK;
