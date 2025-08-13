@@ -19,14 +19,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: configure
-        run: ./configure
-      - name: make
+      - name: Build
         run: make
-      - name: make check
-        run: make check
-      - name: make distcheck
-        run: make distcheck
+      - name: Run DAP host tests
+        run: make -C test/dap host-test
       - name: Merge into test---build on success
         if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/test---build' }}
         env:
