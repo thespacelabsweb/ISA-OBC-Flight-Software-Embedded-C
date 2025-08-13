@@ -7,3 +7,7 @@ instruction/
 .cursorrules
 ISA-OBC-Flight-Software-Embedded-C/build/
 build/
+test/dap/build_dap/
+test/dap/build_sam/
+test/dap/build_host/
+.cursorrules
