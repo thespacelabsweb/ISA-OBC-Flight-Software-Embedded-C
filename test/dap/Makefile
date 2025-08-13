@@ -1,19 +1,26 @@
 # ISA Digital Autopilot (DAP) Makefile
-# Enhanced with dual build support: XC32 for PIC32 verification, GCC for host testing
+# Enhanced with dual build support: XC32 for SAM verification, GCC for host testing
 
 # Build type selection
-ifdef PIC32_BUILD
+ifdef SAM_BUILD
     CC = xc32-gcc
     CFLAGS = -Wall -Wextra -pedantic -std=c99 -O2 -g -mprocessor=32MX470F512H
     LDFLAGS = -lm
-    BUILD_SUFFIX = _pic32
-    TARGET_DESC = PIC32
+    BUILD_SUFFIX = _sam
+    TARGET_DESC = SAM
 else
     CC = gcc
     CFLAGS = -Wall -Wextra -pedantic -std=c99 -O2 -g
     LDFLAGS = -lm
-    BUILD_SUFFIX = _host
+    BUILD_SUFFIX = _dap
     TARGET_DESC = Host
+endif
+
+# Post-build action: run on host when not building for SAM
+ifdef SAM_BUILD
+RUN_AFTER_BUILD :=
+else
+RUN_AFTER_BUILD := $(MAKE) -s run
 endif
 
 # Directories (relative to this Makefile at test/dap)
@@ -40,9 +47,10 @@ OBJS = $(MATH_OBJ) $(DAP_OBJ) $(MAIN_OBJ)
 # Target executable
 TARGET = $(BUILD_DIR)/dap_test
 
-# Default target - compile for host
+# Default target - compile; also execute on host when using GCC
 all: directories $(TARGET)
 	@echo "✓ $(TARGET_DESC) build completed successfully"
+	$(RUN_AFTER_BUILD)
 
 # Check XC32 availability
 check-xc32:
@@ -58,18 +66,12 @@ check-xc32:
 		exit 1; \
 	fi
 
-# PIC32 verification target
-pic32-verify: check-xc32 clean
-	@echo "Building for PIC32 verification..."
-	$(MAKE) PIC32_BUILD=1 all
-	@echo "✓ Code verified for PIC32 compatibility"
+# Direct SAM build target (XC32)
+sam: check-xc32
+	@echo "Building for SAM..."
+	$(MAKE) SAM_BUILD=1 all
 
-# Host testing target  
-host-test: clean
-	@echo "Building for host testing..."
-	$(MAKE) all
-	@echo "Running tests..."
-	$(MAKE) run
+# Host build is default: use `make`
 
 # Create build directories
 directories:
@@ -95,21 +97,20 @@ $(BUILD_DIR)/dap/%.o: $(TEST_DIR)/%.c
 
 # Clean build files
 clean:
-	rm -rf build_host build_pic32
+	rm -rf build_host build_sam build_dap
 
 # Run the program
-run: 
-ifdef PIC32_BUILD
-	@echo "Cannot run PIC32 binary on host system."
-	@echo "✓ PIC32 binary created successfully at $(TARGET)"
-	@echo "Use MPLAB X SIM or actual PIC32 hardware to execute."
+run: $(TARGET)
+ifdef SAM_BUILD
+	@echo "Cannot run SAM binary on host system."
+	@echo "✓ SAM binary created successfully at $(TARGET)"
+	@echo "Use MPLAB X SIM or actual SAM hardware to execute."
 else
 	./$(TARGET)
 endif
 
 # Convenience targets
-verify-xc32: pic32-verify
-test: host-test
+verify-xc32: sam
 
 # Quick XC32 setup helper
 setup-xc32:
@@ -124,13 +125,11 @@ setup-xc32:
 help:
 	@echo "Available targets:"
 	@echo "  all          - Build for host (default)"
-	@echo "  pic32-verify - Verify code compiles with XC32 for PIC32"
-	@echo "  host-test    - Build and test on host system"
-	@echo "  verify-xc32  - Alias for pic32-verify"
-	@echo "  test         - Alias for host-test"
+	@echo "  sam          - Build for SAM using XC32"
+	@echo "  verify-xc32  - Alias for sam"
 	@echo "  check-xc32   - Check if XC32 compiler is available"
 	@echo "  setup-xc32   - Show XC32 PATH setup instructions"
 	@echo "  clean        - Remove all build files"
 	@echo "  help         - Show this help"
 
-.PHONY: all clean run directories pic32-verify host-test verify-xc32 test help check-xc32 setup-xc32
+.PHONY: all clean run directories sam verify-xc32 help check-xc32 setup-xc32
