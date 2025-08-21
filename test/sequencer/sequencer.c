@@ -19,8 +19,9 @@
 #define T2_WINDOW_END_CYCLES 500  // 5.0 seconds
 #define ROLL_RATE_T2_RPS 2.0
 
+#define GUIDANCE_START_DELAY_CYCLES 200 // 2.0 Seconds T2 + 2 Seconds 
 #define PITCH_YAW_DELAY_CYCLES 500 // 5.0 seconds (500 cycles)
-#define GUIDANCE_START_DELAY_CYCLES 700 // 2.0 Seconds T2 + 2 Seconds after pitch/yaw
+// after pitch/yaw
 
 void Sequencer_Initialize(SequencerStatus *status) {
   if (status == NULL) {
@@ -32,9 +33,11 @@ void Sequencer_Initialize(SequencerStatus *status) {
 
   // Initialize all timers and counters to zero
   status->globalMinorCycleCount = 0;
+  //
   status->t0_Set_CycleCount = 0;
   status->t1_Set_CycleCount = 0;
   status->t2_Set_CycleCount = 0;
+  //
   status->rollRateCheck_ConsecutiveCount = 0;
 
   // Ensure all output flags are set to FALSE at startup
@@ -159,6 +162,7 @@ void Sequencer_Execute(SequencerStatus *status,
           // Flag for DAP
           printf("ACTION: Roll Control On\n");
           status->dapRollControl_Flag = true;
+          status->rollRateCheck_ConsecutiveCount = 0;
 
           // Reset the counter, ready for further checks
           status->state = SEQ_STATE_ROLL_CONTROL;
@@ -171,40 +175,36 @@ void Sequencer_Execute(SequencerStatus *status,
 
 
 
-      case SEQ_STATE_ROLL_CONTROL:
-      // This state's ONLY job is to wait for the pitch/yaw delay.
-      if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
-          printf("ACTION: Pitch and Yaw Control ON\n");
-          status->dapPitchYawControl_Flag = true;
+    case SEQ_STATE_ROLL_CONTROL:
+    // this state handles the timed events in t2
+    //check for GUID_START first (at T2 + 2s)
+      if (status->GUID_START_Flag == false && (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES))) {
+        printf("ACTION: GUID_START flag set for guidance module (T2 + 2)\n");
+        status->GUID_START_Flag = true;
+      }
 
-          // Now that pitch/yaw is on, move to the next state to wait for guidance.
-          status->state = SEQ_STATE_PITCH_YAW_CONTROL;
+      // check if its time to enable the PITCH/YAW control.
+      //this happens later, at T2 + 5 Seconds.
+      if (status->dapPitchYawControl_Flag == false && (status->globalMinorCycleCount >= status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
+        printf("ACTION: Pitch and Yaw Control ON (T2 + 5s)\n");
+        status->dapPitchYawControl_Flag = true;
+
+        // this is the last event in this phase, so now it changes the state.
+        status->state = SEQ_STATE_GUIDANCE;
       }
       break;
 
-
-
-  case SEQ_STATE_PITCH_YAW_CONTROL:
-      // This state's ONLY job is to wait for the guidance delay.
-      if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
-          printf("ACTION: GUID_START flag set for Guidance Module\n");
-          status->GUID_START_Flag = true;
-
-          // Now guidance is active, move to the main guidance state.
-          status->state = SEQ_STATE_GUIDANCE;
-      }
-      break;
-
-  case SEQ_STATE_GUIDANCE:
+    case SEQ_STATE_GUIDANCE:
       if (guidanceTerminal_Flag == true) {
+          printf("ACTION: Enabling Proximity Sensor.\n");
           status->proximityEnable_Flag = true;
           status->state = SEQ_STATE_IMPACT;
       }
       break;
 
-  case SEQ_STATE_IMPACT:
-      // Mission is complete.
-      break;
+    case SEQ_STATE_IMPACT:
+        // Mission is complete.
+        break;
 }
 }
 const char* Sequencer_GetStateString(SequencerState state) {
