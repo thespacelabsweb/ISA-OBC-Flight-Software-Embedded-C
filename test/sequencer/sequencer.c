@@ -20,7 +20,7 @@
 #define ROLL_RATE_T2_RPS 2.0
 
 #define PITCH_YAW_DELAY_CYCLES 500 // 5.0 seconds (500 cycles)
-#define GUIDANCE_START_DELAY_CYCLES 200 // 2.0 Seconds T2 + 2 Seconds after pitch/yaw
+#define GUIDANCE_START_DELAY_CYCLES 700 // 2.0 Seconds T2 + 2 Seconds after pitch/yaw
 
 void Sequencer_Initialize(SequencerStatus *status) {
   if (status == NULL) {
@@ -169,57 +169,54 @@ void Sequencer_Execute(SequencerStatus *status,
       }
       break;
 
-    case SEQ_STATE_ROLL_CONTROL:
-      // In this state, it will wait for time delays after T2.
-      // First check if it's time to enable pitch/yaw control.
-      if (status->dapPitchYawControl_Flag == false &&
-          (status->globalMinorCycleCount >=
-           status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
-        printf("ACTION: Pitch and Yaw Control ON\n");
-        status->dapPitchYawControl_Flag = true;
-      }
-      // Next, check if it's time to start guidance. This happens after pitch and
-      // yaw is stable
-      if (status->GUID_START_Flag == false &&
-          (status->globalMinorCycleCount >=
-           status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
-        printf("ACTION: GUID_START flag set for Guidance Module\n");
-        status->GUID_START_Flag = true;
 
-        // Now guidance is active, move to the main guidance state.
-        status->state = SEQ_STATE_GUIDANCE;
+
+      case SEQ_STATE_ROLL_CONTROL:
+      // This state's ONLY job is to wait for the pitch/yaw delay.
+      if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
+          printf("ACTION: Pitch and Yaw Control ON\n");
+          status->dapPitchYawControl_Flag = true;
+
+          // Now that pitch/yaw is on, move to the next state to wait for guidance.
+          status->state = SEQ_STATE_PITCH_YAW_CONTROL;
       }
       break;
 
 
 
-    case SEQ_STATE_GUIDANCE:
-        // Now in main guidance phase, waiting for the t_go , go ahead signal from the guidance module.
-        if (guidanceTerminal_Flag == true){
-          printf("EVENT: T3 Signal received from Guidance Module\n");
+  case SEQ_STATE_PITCH_YAW_CONTROL:
+      // This state's ONLY job is to wait for the guidance delay.
+      if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
+          printf("ACTION: GUID_START flag set for Guidance Module\n");
+          status->GUID_START_Flag = true;
 
-          //Per requirement, set the flag to enable proximity sensor
-          printf("ACTION: Enabling Proximity Sensor.\n");
+          // Now guidance is active, move to the main guidance state.
+          status->state = SEQ_STATE_GUIDANCE;
+      }
+      break;
+
+  case SEQ_STATE_GUIDANCE:
+      if (guidanceTerminal_Flag == true) {
           status->proximityEnable_Flag = true;
-
-          //Move to the next state.
           status->state = SEQ_STATE_IMPACT;
-        }
+      }
       break;
-    case SEQ_STATE_IMPACT:
-          //Mission is complete. The sequencer is now idle.
-          break;
-  }
+
+  case SEQ_STATE_IMPACT:
+      // Mission is complete.
+      break;
+}
 }
 const char* Sequencer_GetStateString(SequencerState state) {
-  switch (state) {
-      case SEQ_STATE_PRE_FIRING: return "PRE_FIRING";
-      case SEQ_STATE_FIRING_DETECTED: return "FIRING_DETECTED";
-      case SEQ_STATE_HIGH_SPIN: return "HIGH_SPIN";
-      case SEQ_STATE_CANARD_DEPLOY: return "CANARD_DEPLOY";
-      case SEQ_STATE_ROLL_CONTROL: return "ROLL_CONTROL";
-      case SEQ_STATE_GUIDANCE: return "GUIDANCE";
-      case SEQ_STATE_IMPACT: return "IMPACT";
-      default: return "UNKNOWN_STATE";
-  }
+    switch (state) {
+        case SEQ_STATE_PRE_FIRING: return "PRE_FIRING";
+        case SEQ_STATE_FIRING_DETECTED: return "FIRING_DETECTED";
+        case SEQ_STATE_HIGH_SPIN: return "HIGH_SPIN";
+        case SEQ_STATE_CANARD_DEPLOY: return "CANARD_DEPLOY";
+        case SEQ_STATE_ROLL_CONTROL: return "ROLL_CONTROL";
+        case SEQ_STATE_PITCH_YAW_CONTROL: return "PITCH_YAW_CONTROL"; 
+        case SEQ_STATE_GUIDANCE: return "GUIDANCE";
+        case SEQ_STATE_IMPACT: return "IMPACT";
+        default: return "UNKNOWN_STATE";
+    }
 }
