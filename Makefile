@@ -37,6 +37,9 @@ OBJS = $(MATH_OBJ) $(GUIDANCE_OBJ) $(NAVIGATION_OBJ) $(DAP_OBJ) $(SEQUENCER_OBJ)
 TEST_SRC = $(wildcard $(TEST_DIR)/*.c)
 TEST_BINS = $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/test_%,$(TEST_SRC))
 
+# Sequencer test (special case)
+SEQUENCER_TEST = $(BUILD_DIR)/test_sequencer
+
 # Target executable
 TARGET = $(BUILD_DIR)/isa_flight_software
 
@@ -87,14 +90,20 @@ $(BUILD_DIR)/hal/%.o: $(SRC_DIR)/hal/%.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
 
 # Compile and run tests
-tests: directories $(TEST_BINS)
+tests: directories $(TEST_BINS) $(SEQUENCER_TEST)
 	@for test in $(TEST_BINS); do \
 		echo "Running $$test"; \
 		./$$test; \
 	done
+	@echo "Running sequencer test"; \
+	./$(SEQUENCER_TEST)
 
 # Compile test files
 $(BUILD_DIR)/test_%: $(TEST_DIR)/%.c $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
+	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -o $@ $^ $(LDFLAGS)
+
+# Compile sequencer test
+$(SEQUENCER_TEST): $(TEST_DIR)/sequencer/test_sequencer.c $(TEST_DIR)/sequencer/sequencer.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -o $@ $^ $(LDFLAGS)
 
 # Clean build files

@@ -1,5 +1,6 @@
 #include "sequencer.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 /**
 * @brief Initializes the sequencer to its pre-firing state.
@@ -19,13 +20,11 @@
 #define ROLL_RATE_T2_RPS 2.0
 
 #define PITCH_YAW_DELAY_CYCLES 500 // 5.0 seconds (500 cycles)
-#define GUIDANCE_START_DELAY_CYCLES                                            \
-  200 // 2.0 Seconds T2 + 2 Seconds after pitch/yaw
+#define GUIDANCE_START_DELAY_CYCLES 200 // 2.0 Seconds T2 + 2 Seconds after pitch/yaw
 
 void Sequencer_Initialize(SequencerStatus *status) {
   if (status == NULL) {
-    return; // Safety check for misra c, for false memory writing. pani kittathe
-            // irikan.
+    return; // Safety check for misra c, for false memory writing. 
   }
 
   // Set the initial state to PRE_FIRING
@@ -36,12 +35,14 @@ void Sequencer_Initialize(SequencerStatus *status) {
   status->t0_Set_CycleCount = 0;
   status->t1_Set_CycleCount = 0;
   status->t2_Set_CycleCount = 0;
+  status->rollRateCheck_ConsecutiveCount = 0;
 
   // Ensure all output flags are set to FALSE at startup
-  status->fsaCanardDeploy_Flag = FALSE;
-  status->dapRollControl_Flag = FALSE;
-  status->dapPitchYawControl_Flag = FALSE;
-  status->GUID_START_Flag = FALSE;
+  status->fsaCanardDeploy_Flag = false;
+  status->dapRollControl_Flag = false;
+  status->dapPitchYawControl_Flag = false;
+  status->GUID_START_Flag = false;
+  status->proximityEnable_Flag = false;
 }
 
 /**
@@ -51,76 +52,83 @@ void Sequencer_Initialize(SequencerStatus *status) {
  */
 
 void Sequencer_Execute(SequencerStatus *status,
-                       Bool gSwitchActive double rollRate) {
+                       bool gSwitchActive, double rollRate, bool guidanceTerminal_Flag) {
   if (status == NULL) {
     return;
   }
 
   // This is the master clock. it increments every time this function is called.
-
   status->globalMinorCycleCount++;
+
+
+
+
   // The switch statement checks which state we are currently in
   switch (status->state) {
-  case SEQ_STATE_PRE_FIRING:
+
+
+
+    case SEQ_STATE_PRE_FIRING:
     // waiting for the T0 State
     // The G-switch firing is what sets T0
-    if (gSwitchActive == TRUE) {
-      // The projectile has been fired!
-      printf("EVENT: Firing Detected!\n");
+      if (gSwitchActive == true) {
+        // The projectile has been fired!
+        printf("EVENT: Firing Detected!\n");
 
-      // Record the exact time of the event.
-      status->t0_Set_CycleCount = status->globalMinorCycleCount;
+        // Record the exact time of the event.
+        status->t0_Set_CycleCount = status->globalMinorCycleCount;
 
-      // Move to the next state on the checklist.
+        // Move to the next state on the checklist.
 
-      status->state = SEQ_STATE_FIRING_DETECTED;
-    }
-    break; // End of logic for this state.
-
-  // Projectile Fired
-  case SEQ_STATE_FIRING_DETECTED:
-    // Transistional state , the projectile will me immediately to the high spin
-    // rates
-    printf("STATE TRANSISTION: FIRING_DETECTED -> HIGH_SPIN RATES\n");
-    status->state = SEQ_STATE_HIGH_SPIN;
-    break;
-
-  // HIGH SPIN RATE
-  case SEQ_STATE_HIGH_SPIN:
-    // Check if it is within the time window to look for  T1 event.
-    if (status->globalMinorCycleCount >
-            (status->t0_Set_CycleCount + T1_WINDOW_START_CYCLES) &&
-        status->globalMinorCycleCount <
-            (status->t0_Set_CycleCount + T1_WINDOW_END_CYCLES)) {
-      // check whether it is in the window, check the roll rate
-      if (rollRate < ROLL_RATE_T1_RPS) {
-        // iF condition is met, increment the consecutive counter
-        status->rollRateCheck_ConsecutiveCount++;
-      } else {
-        // If it fails, reset the counter to Zero
-        status->rollRateCheck_ConsecutiveCount = 0;
+        status->state = SEQ_STATE_FIRING_DETECTED;
       }
-      // here it check if we have met the condition for 3 cycles in a row
-      if (status->rollRateCheck_ConsecutiveCount >=
-          CONSECUTIVE_CHECKS_REQUIRED) {
-        printf("EVENT: T1 Set! (Roll Rate < 7 rps for 3 cycles)\n");
+      break; // End of logic for this state.
 
-        // Record the timestamp for T1
-        status->t1_Set_CycleCount = status->globalMinorCycleCount;
+    // Projectile Fired
+    case SEQ_STATE_FIRING_DETECTED:
+      // Transitional state , the projectile will me immediately to the high spin
+      // rates
+      printf("STATE TRANSISTION: FIRING_DETECTED -> HIGH_SPIN RATES\n");
+      status->state = SEQ_STATE_HIGH_SPIN;
+      break;
 
-        // Set the flag for canard deployment
-        status->fsaCanardDeploy_Flag = TRUE;
+    // HIGH SPIN RATE
+    case SEQ_STATE_HIGH_SPIN:
+      // Check if it is within the time window to look for  T1 event.
+      if (status->globalMinorCycleCount >
+              (status->t0_Set_CycleCount + T1_WINDOW_START_CYCLES) &&
+          status->globalMinorCycleCount <
+              (status->t0_Set_CycleCount + T1_WINDOW_END_CYCLES)) {
+        // check whether it is in the window, check the roll rate
+        if (rollRate < ROLL_RATE_T1_RPS) {
+          // iF condition is met, increment the consecutive counter
+          status->rollRateCheck_ConsecutiveCount++;
+        } else {
+          // If it fails, reset the counter to Zero
+            status->rollRateCheck_ConsecutiveCount = 0;
+        }
+        // here it check if we have met the condition for 3 cycles in a row
+        if (status->rollRateCheck_ConsecutiveCount >=
+            CONSECUTIVE_CHECKS_REQUIRED) {
+          printf("EVENT: T1 Set! (Roll Rate < 7 rps for 3 cycles)\n");
 
-        // Reset the counter for the next check
-        status->rollRateCheck_ConsecutiveCount = 0;
+          // Record the timestamp for T1
+          status->t1_Set_CycleCount = status->globalMinorCycleCount;
 
-        // Move to the next state
-        status->state = SEQ_STATE_CANARD_DEPLOY;
-      } else if (status->globalMinorCycleCount >=
-                 (status->t0_Set_CycleCount + T1_WINDOW_END_CYCLES)) {
-        // iF the window is passed without setting T1,it's an exit condition
-        printf("Warning - T1 Window Out!\n");
-        // have to do sth here
+          // Set the flag for canard deployment
+          status->fsaCanardDeploy_Flag = true;
+
+          // Reset the counter for the next check
+          status->rollRateCheck_ConsecutiveCount = 0;
+
+          // Move to the next state
+          status->state = SEQ_STATE_CANARD_DEPLOY;
+        } else if (status->globalMinorCycleCount >=
+                  (status->t0_Set_CycleCount + T1_WINDOW_END_CYCLES)) {
+          // iF the window is passed without setting T1,it's an exit condition
+          printf("Warning - T1 Window Out!\n");
+          // have to do sth here
+        }
       }
       break;
 
@@ -150,36 +158,68 @@ void Sequencer_Execute(SequencerStatus *status,
           // Enable Roll Control
           // Flag for DAP
           printf("ACTION: Roll Control On\n");
-          status->dapRollControl_Flag = TRUE;
+          status->dapRollControl_Flag = true;
 
           // Reset the counter, ready for further checks
           status->state = SEQ_STATE_ROLL_CONTROL;
         }
       } else if (status->globalMinorCycleCount >=
-                 (status->t1_Set_CycleCount + T2_WINDOW_END_CYCLES)) {
+                 (status->t2_Set_CycleCount + T2_WINDOW_END_CYCLES)) {
         printf("ERROR: T2 Window Out!");
       }
       break;
-    }
-  case SEQ_STATE_ROLL_CONTROL:
-    // In this state, it will wait for time delays after T2.
-    // First check if it's time to enable pitch/yaw control.
-    if (status->dapPitchYawControl_Flag == FALSE &&
-        (status->globalMinorCycleCount >=
-         status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
-      printf("ACTION: Pitch and Yaw Control ON\n");
-      status->dapPitchYawControl_Flag = TRUE;
-    }
-    // Next, check if it's time to start guidance. This happens after pitch and
-    // yaw is stable
-    if (status->GUID_START_Flag == FALSE &&
-        (status->globalMinorCycleCount >=
-         status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
-      printf("ACTION: GUID_START flag set for Guidance Module\n");
-      status->GUID_START_Flag = TRUE;
 
-      // Now guidance is active, move to the main guidance state.
-      status->state = SEQ_STATE_GUIDANCE;
-    }
-    break;
+    case SEQ_STATE_ROLL_CONTROL:
+      // In this state, it will wait for time delays after T2.
+      // First check if it's time to enable pitch/yaw control.
+      if (status->dapPitchYawControl_Flag == false &&
+          (status->globalMinorCycleCount >=
+           status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
+        printf("ACTION: Pitch and Yaw Control ON\n");
+        status->dapPitchYawControl_Flag = true;
+      }
+      // Next, check if it's time to start guidance. This happens after pitch and
+      // yaw is stable
+      if (status->GUID_START_Flag == false &&
+          (status->globalMinorCycleCount >=
+           status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
+        printf("ACTION: GUID_START flag set for Guidance Module\n");
+        status->GUID_START_Flag = true;
+
+        // Now guidance is active, move to the main guidance state.
+        status->state = SEQ_STATE_GUIDANCE;
+      }
+      break;
+
+
+
+    case SEQ_STATE_GUIDANCE:
+        // Now in main guidance phase, waiting for the t_go , go ahead signal from the guidance module.
+        if (guidanceTerminal_Flag == true){
+          printf("EVENT: T3 Signal received from Guidance Module\n");
+
+          //Per requirement, set the flag to enable proximity sensor
+          printf("ACTION: Enabling Proximity Sensor.\n");
+          status->proximityEnable_Flag = true;
+
+          //Move to the next state.
+          status->state = SEQ_STATE_IMPACT;
+        }
+      break;
+    case SEQ_STATE_IMPACT:
+          //Mission is complete. The sequencer is now idle.
+          break;
   }
+}
+const char* Sequencer_GetStateString(SequencerState state) {
+  switch (state) {
+      case SEQ_STATE_PRE_FIRING: return "PRE_FIRING";
+      case SEQ_STATE_FIRING_DETECTED: return "FIRING_DETECTED";
+      case SEQ_STATE_HIGH_SPIN: return "HIGH_SPIN";
+      case SEQ_STATE_CANARD_DEPLOY: return "CANARD_DEPLOY";
+      case SEQ_STATE_ROLL_CONTROL: return "ROLL_CONTROL";
+      case SEQ_STATE_GUIDANCE: return "GUIDANCE";
+      case SEQ_STATE_IMPACT: return "IMPACT";
+      default: return "UNKNOWN_STATE";
+  }
+}
