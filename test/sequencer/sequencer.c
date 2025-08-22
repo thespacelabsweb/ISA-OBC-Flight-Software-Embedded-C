@@ -12,6 +12,7 @@
 #define T1_WINDOW_START_CYCLES 10 // 0.1 seconds (10 cycles)
 #define T1_WINDOW_END_CYCLES 500  // 5.0 seconds (500 cycles)
 #define ROLL_RATE_T1_RPS 7.0
+//
 #define CONSECUTIVE_CHECKS_REQUIRED 3
 
 // T2 Window Cycle definition (Waiting for Roll Control)
@@ -19,9 +20,9 @@
 #define T2_WINDOW_END_CYCLES 500  // 5.0 seconds
 #define ROLL_RATE_T2_RPS 2.0
 
-#define GUIDANCE_START_DELAY_CYCLES 200 // 2.0 Seconds T2 + 2 Seconds 
-#define PITCH_YAW_DELAY_CYCLES 500 // 5.0 seconds (500 cycles)
-// after pitch/yaw
+#define ROLL_CONTROL_DELAY_CYCLES 10 // T2 + 10 ms
+#define GUIDANCE_START_DELAY_CYCLES 200 // T2 + 200 ms 
+#define PITCH_YAW_DELAY_CYCLES 500 // T2 + 500 ms
 
 void Sequencer_Initialize(SequencerStatus *status) {
   if (status == NULL) {
@@ -69,8 +70,6 @@ void Sequencer_Execute(SequencerStatus *status,
   // The switch statement checks which state we are currently in
   switch (status->state) {
 
-
-
     case SEQ_STATE_PRE_FIRING:
     // waiting for the T0 State
     // The G-switch firing is what sets T0
@@ -114,6 +113,7 @@ void Sequencer_Execute(SequencerStatus *status,
         if (status->rollRateCheck_ConsecutiveCount >=
             CONSECUTIVE_CHECKS_REQUIRED) {
           printf("EVENT: T1 Set! (Roll Rate < 7 rps for 3 cycles)\n");
+          printf("ACTION: Sending Canard Deploy Flag to FSA.\n");
 
           // Record the timestamp for T1
           status->t1_Set_CycleCount = status->globalMinorCycleCount;
@@ -154,13 +154,12 @@ void Sequencer_Execute(SequencerStatus *status,
         if (status->rollRateCheck_ConsecutiveCount >=
             CONSECUTIVE_CHECKS_REQUIRED) {
           printf("EVENT: T2 Set! (Roll Rate < 2 rps for 3 cycles)\n");
-
+          printf("ACTION: Roll Control ON\n");   
           // Record the timestamp for T2
           status->t2_Set_CycleCount = status->globalMinorCycleCount;
 
           // Enable Roll Control
           // Flag for DAP
-          printf("ACTION: Roll Control On\n");
           status->dapRollControl_Flag = true;
           status->rollRateCheck_ConsecutiveCount = 0;
 
@@ -173,38 +172,36 @@ void Sequencer_Execute(SequencerStatus *status,
       }
       break;
 
-
-
     case SEQ_STATE_ROLL_CONTROL:
-    // this state handles the timed events in t2
-    //check for GUID_START first (at T2 + 2s)
-      if (status->GUID_START_Flag == false && (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES))) {
-        printf("ACTION: GUID_START flag set for guidance module (T2 + 2)\n");
+    // This state's ONLY job is to wait for the GUIDANCE delay.
+    if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
+        printf("ACTION: GUID_START flag set (T2 + 2s)\n");
         status->GUID_START_Flag = true;
-      }
+        // Now move to the next state to wait for P/Y control.
+        status->state = SEQ_STATE_PITCH_YAW_CONTROL;
+    }
+    break;
 
-      // check if its time to enable the PITCH/YAW control.
-      //this happens later, at T2 + 5 Seconds.
-      if (status->dapPitchYawControl_Flag == false && (status->globalMinorCycleCount >= status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
-        printf("ACTION: Pitch and Yaw Control ON (T2 + 5s)\n");
-        status->dapPitchYawControl_Flag = true;
-
-        // this is the last event in this phase, so now it changes the state.
-        status->state = SEQ_STATE_GUIDANCE;
-      }
-      break;
+    case SEQ_STATE_PITCH_YAW_CONTROL:
+        // This state's ONLY job is to wait for the PITCH/YAW control delay.
+        if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
+            printf("ACTION: Pitch and Yaw Control ON (T2 + 5s)\n");
+            status->dapPitchYawControl_Flag = true;
+            // This is the last timed event, so NOW we move to the main guidance phase.
+            status->state = SEQ_STATE_GUIDANCE;
+        }
+        break;
 
     case SEQ_STATE_GUIDANCE:
-      if (guidanceTerminal_Flag == true) {
-          printf("ACTION: Enabling Proximity Sensor.\n");
-          status->proximityEnable_Flag = true;
-          status->state = SEQ_STATE_IMPACT;
-      }
-      break;
+        if (guidanceTerminal_Flag == true) {
+            printf("ACTION: Proximity Enable Flag Send.\n");
+            status->proximityEnable_Flag = true;
+            status->state = SEQ_STATE_IMPACT;
+        }
+        break;
 
     case SEQ_STATE_IMPACT:
-        // Mission is complete.
-        break;
+        break; // Mission complete
 }
 }
 const char* Sequencer_GetStateString(SequencerState state) {

@@ -59,15 +59,18 @@ int main (void){
 
         // --- Print the Status ---
         // Printing the status in specific moments to see whats happening.
-        printf("Cycle: %-5u | State: %-25s | Roll Rate: %6.2f rps | Flags: [FSA:%d DAP_R:%d DAP_PY:%d GUID:%d PROX:%d]\n",
+        printf("Cycle: %-5u | State: %-25s | Roll Rate: %6.2f rps | ",
             status.globalMinorCycleCount,
             Sequencer_GetStateString(status.state),
-            rollRate,
-            status.fsaCanardDeploy_Flag,
-            status.dapRollControl_Flag,
-            status.dapPitchYawControl_Flag,
-            status.GUID_START_Flag,
-            status.proximityEnable_Flag);
+            rollRate);
+     
+        // Print flags to show the progress clearly
+        printf("Flags: [ FSA:%d ", status.fsaCanardDeploy_Flag);
+        if (status.dapRollControl_Flag) printf("DAP_Roll:%d ", status.dapRollControl_Flag);
+        if (status.GUID_START_Flag) printf("GUID_START:%d ", status.GUID_START_Flag);
+        if (status.dapPitchYawControl_Flag) printf("DAP_PY:%d ", status.dapPitchYawControl_Flag);
+        if (status.proximityEnable_Flag) printf("PROX:%d", status.proximityEnable_Flag);
+        printf("]\n");
 
 
             // --- Reset event ---
