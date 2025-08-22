@@ -154,7 +154,7 @@ void Sequencer_Execute(SequencerStatus *status,
         if (status->rollRateCheck_ConsecutiveCount >=
             CONSECUTIVE_CHECKS_REQUIRED) {
           printf("EVENT: T2 Set! (Roll Rate < 2 rps for 3 cycles)\n");
-          printf("ACTION: Roll Control ON\n");   
+          printf("ACTION: Roll Control ON Flag send to DAP\n");   
           // Record the timestamp for T2
           status->t2_Set_CycleCount = status->globalMinorCycleCount;
 
