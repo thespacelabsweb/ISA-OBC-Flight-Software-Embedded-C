@@ -84,7 +84,7 @@ int main (void){
                 break;
             }
             // Simulate the 10 ms delay between cycles
-            usleep(SIMULATION_STEP_MS * 1000);
+            usleep(SIMULATION_STEP_MS * 500);
     }
 
     printf("\n--- Sequencer Simulation Finished ---\n");

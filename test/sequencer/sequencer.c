@@ -177,26 +177,24 @@ void Sequencer_Execute(SequencerStatus *status,
     if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + GUIDANCE_START_DELAY_CYCLES)) {
         printf("ACTION: GUID_START flag set (T2 + 2s)\n");
         status->GUID_START_Flag = true;
+        status->state = SEQ_STATE_GUIDANCE;
+    }
+    break;
+
+    case SEQ_STATE_GUIDANCE:
+    if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
+        printf("ACTION: Pitch and Yaw Control ON (T2 + 5s)\n");
+        status->dapPitchYawControl_Flag = true;
         // Now move to the next state to wait for P/Y control.
         status->state = SEQ_STATE_PITCH_YAW_CONTROL;
     }
     break;
 
     case SEQ_STATE_PITCH_YAW_CONTROL:
-        // This state's ONLY job is to wait for the PITCH/YAW control delay.
-        if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
-            printf("ACTION: Pitch and Yaw Control ON (T2 + 5s)\n");
-            status->dapPitchYawControl_Flag = true;
-            // This is the last timed event, so NOW we move to the main guidance phase.
-            status->state = SEQ_STATE_GUIDANCE;
-        }
-        break;
-
-    case SEQ_STATE_GUIDANCE:
-        if (guidanceTerminal_Flag == true) {
-            printf("ACTION: Proximity Enable Flag Send.\n");
-            status->proximityEnable_Flag = true;
-            status->state = SEQ_STATE_IMPACT;
+    if (guidanceTerminal_Flag == true) {
+        printf("ACTION: Proximity Enable Flag Send.\n");
+        status->proximityEnable_Flag = true;
+        status->state = SEQ_STATE_IMPACT;
         }
         break;
 
