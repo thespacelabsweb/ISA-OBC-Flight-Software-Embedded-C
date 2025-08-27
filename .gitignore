@@ -14,3 +14,4 @@ test/guidance/build
 test/sequencer/main_sequencer_sim.o
 test/sequencer/sequencer_test.exe
 test/sequencer/sequencer.o
+test/dap/build_sam
