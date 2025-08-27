@@ -1,17 +1,24 @@
+# IDE and Editor files
 .cursor/
 .vscode/
+.cursorrules
+
+# Documentation and reference files
 instruction/
 reference code/
 requirement_doc/
-instruction/
-.cursorrules
-ISA-OBC-Flight-Software-Embedded-C/build/
+
+# Build directories
 build/
-.cursorrules
-test/dap/build_dap
-test/dap/output
-test/guidance/build
-test/sequencer/main_sequencer_sim.o
-test/sequencer/sequencer_test.exe
-test/sequencer/sequencer.o
-test/dap/build_sam
+ISA-OBC-Flight-Software-Embedded-C/build/
+test/*/build/
+test/*/build_*/
+
+# Test outputs and executables
+test/output/
+test/.exe
+test/.o
+
+# SAM-specific builds
+test/dap/build_sam/
+test/dap/build_sam/
