@@ -7,3 +7,10 @@ instruction/
 .cursorrules
 ISA-OBC-Flight-Software-Embedded-C/build/
 build/
+.cursorrules
+test/dap/build_dap
+test/dap/output
+test/guidance/build
+test/sequencer/main_sequencer_sim.o
+test/sequencer/sequencer_test.exe
+test/sequencer/sequencer.o

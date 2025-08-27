@@ -183,7 +183,6 @@ void Sequencer_Execute(SequencerStatus *status,
     break;
 
     case SEQ_STATE_PITCH_YAW_CONTROL:
-        // This state's ONLY job is to wait for the PITCH/YAW control delay.
         if (status->globalMinorCycleCount >= (status->t2_Set_CycleCount + PITCH_YAW_DELAY_CYCLES)) {
             printf("ACTION: Pitch and Yaw Control ON (T2 + 5s)\n");
             status->dapPitchYawControl_Flag = true;
