@@ -1,4 +1,4 @@
-# ISA Flight Software - Team Collab
+# ISA Flight Software - Team Collaboration
 
 ## Project Overview
 
