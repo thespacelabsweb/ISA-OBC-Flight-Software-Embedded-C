@@ -1,17 +1,28 @@
-# Makefile for Sequencer Test Application
-# Builds the sequencer test executable
+# Makefile for ISA Flight Sequencer Test
+# MISRA C Compliant Build Configuration
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -O2 -g
-INCLUDES = -I.
+CFLAGS = -Wall -Wextra -Wpedantic -std=c99 -O2 -g
+CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
+CFLAGS += -Wold-style-definition -Wpointer-arith -Wcast-qual -Wcast-align
+CFLAGS += -Wwrite-strings -Wconversion -Wsign-conversion -Wfloat-equal
+CFLAGS += -Wformat=2 -Wundef -Wshadow -Wstrict-overflow=5
+CFLAGS += -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self
+
+# Windows-specific: Set temporary directory to current directory
+TMPDIR = .
+export TMPDIR
+
+# Include paths
+INCLUDES = -I. -I../../include/common
 
 # Source files
-SOURCES = main_sequencer_sim.c sequencer.c
+SOURCES = test_sequencer.c sequencer.c
 OBJECTS = $(SOURCES:.c=.o)
 
 # Target executable
-TARGET = sequencer_test
+TARGET = sequencer_test.exe
 
 # Default target
 all: $(TARGET)
@@ -26,15 +37,33 @@ $(TARGET): $(OBJECTS)
 
 # Clean build artifacts
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	del /Q $(OBJECTS) $(TARGET) 2>nul || echo "Clean completed"
 
 # Run target - build and execute
 run: $(TARGET)
-	./$(TARGET)
+	$(TARGET)
 
-# Install target (optional)
-install: $(TARGET)
-	cp $(TARGET) /usr/local/bin/
+# Memory check with valgrind (if available on Windows)
+memcheck: $(TARGET)
+	@echo "Memory checking tools may not be available on Windows"
+	@echo "Consider using Application Verifier or similar Windows tools"
+
+# Static analysis with cppcheck (if available)
+static-check:
+	cppcheck --enable=all --std=c99 --suppress=missingIncludeSystem $(SOURCES)
+
+# MISRA check (requires PC-lint or similar tool)
+misra-check:
+	@echo "Run PC-lint or similar MISRA C checker on source files"
+	@echo "Files to check: $(SOURCES)"
+
+# Debug build with extra debugging symbols
+debug: CFLAGS += -DDEBUG -g3
+debug: $(TARGET)
+
+# Release build with optimizations
+release: CFLAGS += -DNDEBUG -O3
+release: $(TARGET)
 
 # Phony targets
-.PHONY: all clean install run
+.PHONY: all clean run memcheck static-check misra-check debug release
