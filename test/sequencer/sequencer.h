@@ -99,4 +99,6 @@ SequencerError_t sequencerExecute(SequencerState_t* state,
 SequencerError_t sequencerInit(SequencerState_t* state);
 
 //Set G-Switch activation (called when launch is detected)
-SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive);                                
+SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive); 
+
+#endif /* SEQUENCER_H */

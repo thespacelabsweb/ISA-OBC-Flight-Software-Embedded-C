@@ -3,67 +3,78 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -Wpedantic -std=c99 -O2 -g
+CFLAGS = -Wall -Wextra -Wpedantic -std=c99 -O0 -g
 CFLAGS += -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations
 CFLAGS += -Wold-style-definition -Wpointer-arith -Wcast-qual -Wcast-align
-CFLAGS += -Wwrite-strings -Wconversion -Wsign-conversion -Wfloat-equal
-CFLAGS += -Wformat=2 -Wundef -Wshadow -Wstrict-overflow=5
-CFLAGS += -Wswitch-default -Wswitch-enum -Wunreachable-code -Winit-self
+CFLAGS += -Wwrite-strings -Wconversion -Wsign-conversion -Wformat=2
+CFLAGS += -Wformat-security -Wstack-protector -Wunreachable-code
+CFLAGS += -Wundef -Wshadow -Wcast-align=strict
 
-# Windows-specific: Set temporary directory to current directory
-TMPDIR = .
-export TMPDIR
-
-# Include paths
+# Include directories
 INCLUDES = -I. -I../../include/common
 
 # Source files
-SOURCES = test_sequencer.c sequencer.c
-OBJECTS = $(SOURCES:.c=.o)
+SEQUENCER_SRC = sequencer.c
+TEST_SRC = unit_tests/sequencer_test.c
+
+# Object files
+SEQUENCER_OBJ = sequencer.o
+TEST_OBJ = unit_tests/sequencer_test.o
 
 # Target executable
 TARGET = sequencer_test.exe
 
+# Windows compatibility
+TMPDIR = .
+export TMPDIR
+
 # Default target
 all: $(TARGET)
 
-# Build the executable
-$(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(TARGET)
+# Build the test executable
+$(TARGET): $(TEST_OBJ) $(SEQUENCER_OBJ)
+	@echo "Linking $(TARGET)..."
+	$(CC) $(TEST_OBJ) $(SEQUENCER_OBJ) -o $(TARGET)
+	@echo "Build complete: $(TARGET)"
 
-# Compile source files to object files
-%.o: %.c
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+# Compile sequencer source
+$(SEQUENCER_OBJ): $(SEQUENCER_SRC) sequencer.h
+	@echo "Compiling sequencer.c..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(SEQUENCER_SRC) -o $(SEQUENCER_OBJ)
+
+# Compile test source
+$(TEST_OBJ): $(TEST_SRC) sequencer.h
+	@echo "Compiling $(TEST_SRC)..."
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(TEST_SRC) -o $(TEST_OBJ)
+
+# Run the test
+run: $(TARGET)
+	@echo "Running sequencer test..."
+	@echo "=================================="
+	./$(TARGET)
 
 # Clean build artifacts
 clean:
-	del /Q $(OBJECTS) $(TARGET) 2>nul || echo "Clean completed"
+	@echo "Cleaning build artifacts..."
+	del /Q $(SEQUENCER_OBJ) $(TEST_OBJ) $(TARGET) 2>nul || true
+	@echo "Clean complete"
 
-# Run target - build and execute
-run: $(TARGET)
-	$(TARGET)
+# Force rebuild
+rebuild: clean all
 
-# Memory check with valgrind (if available on Windows)
-memcheck: $(TARGET)
-	@echo "Memory checking tools may not be available on Windows"
-	@echo "Consider using Application Verifier or similar Windows tools"
+# Show help
+help:
+	@echo "ISA Flight Sequencer Test Makefile"
+	@echo "Available targets:"
+	@echo "  all      - Build the test executable (default)"
+	@echo "  run      - Build and run the test"
+	@echo "  clean    - Remove build artifacts"
+	@echo "  rebuild  - Clean and build"
+	@echo "  help     - Show this help message"
 
-# Static analysis with cppcheck (if available)
-static-check:
-	cppcheck --enable=all --std=c99 --suppress=missingIncludeSystem $(SOURCES)
+# Declare phony targets
+.PHONY: all run clean rebuild help
 
-# MISRA check (requires PC-lint or similar tool)
-misra-check:
-	@echo "Run PC-lint or similar MISRA C checker on source files"
-	@echo "Files to check: $(SOURCES)"
-
-# Debug build with extra debugging symbols
-debug: CFLAGS += -DDEBUG -g3
-debug: $(TARGET)
-
-# Release build with optimizations
-release: CFLAGS += -DNDEBUG -O3
-release: $(TARGET)
-
-# Phony targets
-.PHONY: all clean run memcheck static-check misra-check debug release
+# Dependencies
+$(TEST_OBJ): sequencer.h
+$(SEQUENCER_OBJ): sequencer.h
