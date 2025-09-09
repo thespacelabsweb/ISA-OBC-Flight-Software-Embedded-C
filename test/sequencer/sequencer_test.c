@@ -44,9 +44,9 @@ int main(void)
 
         // 1. Simulate roll rate decay after launch
         // Slowly decays until it hits a stable 1.8 rps
-        if (state.isT0Set && rollRateFp > 18)
+        if (state.isT0Set && rollRateFp > 0)
         {
-            rollRateFp -= 300; // Decrease by 15 rps each cycle
+            rollRateFp = (uint16_t)(rollRateFp * 0.95); // a 5% decay per cycle
         }
 
         // 2. Simulate the guidance signal becoming ready after 25 seconds
