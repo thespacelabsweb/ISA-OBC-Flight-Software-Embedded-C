@@ -32,9 +32,10 @@
 #define SEQ_T3_WINDOW_IN_TIME      10U //T3 window starts at T1 + 0.1s -> T1 + 5 secs
 #define SEQ_T3_WINDOW_OUT_TIME     500U //T3 window ends at T1 + 0.1s -> T1 + 5 secs
 
-#define SEQ_CANARD_FLAG_DELAY      0U   // No delay after FSA flag (0 cycles) //changeg
+                                        // Disregard the comments vineetha chechi and ananthu chnaged it for testing purposes           
+#define SEQ_CANARD_FLAG_DELAY      0U   // No delay after FSA flag (0 cycles) //changed
 #define SEQ_CONTROL_FLAG_DELAY     0U  // Delay after T2 set (10 cycles = 0.1s) // changed
-#define SEQ_GUID_START_FLAG_DELAY  3U // Delay after Control flag (200 cycles = 2s) //changed
+#define SEQ_GUID_START_FLAG_DELAY  200U // Delay after Control flag (200 cycles = 2s) //changed
 
 
 // Error codes for flight software

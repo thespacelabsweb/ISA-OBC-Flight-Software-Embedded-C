@@ -30,11 +30,13 @@ SequencerError_t sequencerInit(SequencerState_t* state)
     state->isT2Set = false;
     state->isT3Set = false;
 
+    // Intialize all flags to false
     state->isFsaFlagSent = false;
     state->isCanardFlagSent = false;
     state->isControlFlagSent = false;
     state->isGuidStartFlagSent = false;
 
+    // Initialize counters and timers to zero
     state->mainClockCycles = 0U;
     state->fsaFlagSendTime = 0U;
     state->canardFlagSendTime = 0U;
@@ -43,6 +45,7 @@ SequencerError_t sequencerInit(SequencerState_t* state)
     state->t1RollRateCount = 0U;
     state->t2RollRateCount = 0U;
 
+    // G-switch starts inactive
     state->isGswitchActive= false;
 
     return SEQ_SUCCESS;
@@ -71,14 +74,14 @@ SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive)
         state->t2RollRateCount = 0U;
     }
 // it doesn't anything when G-switch goes inactive
-// Oncel launched, it stays launched
-
+// Oncel launched, it stays launched    
     return SEQ_SUCCESS;
 }
 
 // Helper function to check the roll rate condition
 static bool isRollRateOkForT1(uint16_t rollRateFp)
 {
+    // Roll rate threshold for T1 is 7.0 rps (70 in fixed point)
     return (rollRateFp <= SEQ_ROLL_RATE_T1_THRESHOLD);
 }
 
@@ -94,6 +97,8 @@ static SequencerError_t processT1Logic(SequencerState_t* state,
         
         // Calculate flag send times for T2 phase
         state->fsaFlagSendTime = state->mainClockCycles;
+
+        // Delay canard flag by defined delay after FSA flag
         state->canardFlagSendTime = state->fsaFlagSendTime + SEQ_CANARD_FLAG_DELAY;
         
         return SEQ_SUCCESS;
@@ -109,8 +114,8 @@ static SequencerError_t processT1Logic(SequencerState_t* state,
             // Check if counter= 3
             if (state->t1RollRateCount >= SEQ_CONFIRMATION_CYCLES) {
                 //Set T1
-                state->isT1Set = true;
-                output->setT1 = true;
+                state->isT1Set = true; // transition to T1
+                output->setT1 = true; // command to set T1
                 
                 // Calculate flag send times for T2 phase
                 state->fsaFlagSendTime = state->mainClockCycles;
@@ -160,7 +165,9 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
             output->setT2 = true;
 
             // Calculate flag send times for T3 phase
+            // Control flag after defined delay
             state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY;
+            // GUID_START flag after control flag delay
             state->guidStartFlagSendTime = state->controlFlagSendTime + SEQ_GUID_START_FLAG_DELAY;
 
             return SEQ_SUCCESS;
@@ -180,7 +187,8 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
                     output->setT2 = true;
 
                     // Calculate flag send times for T3 phase
-                    state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY;
+                    state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY; // Control flag after defined delay
+                    // GUID_START flag after control flag delay
                     state->guidStartFlagSendTime = state->controlFlagSendTime + SEQ_GUID_START_FLAG_DELAY;
                     
                     return SEQ_SUCCESS;
@@ -200,8 +208,10 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
     // First check if Control flag is already sent
     if (!state->isControlFlagSent) {
         // Check if it's time to send control flag
+        // Control flag is sent after T2 + defined delay
         if (state->mainClockCycles > state->controlFlagSendTime) {
-            output->sendControlFlag = true;
+            // Send control flag
+            output->sendControlFlag = true; 
             state->isControlFlagSent = true;
             return SEQ_SUCCESS;
         }
@@ -220,7 +230,7 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
             // T3 window out - set T3 and enable proximity sensor
             state->isT3Set = true;
             output->setT3 = true;
-            output->enableProximitySensor = true;
+            output->enableProximitySensor = true; // Enable proximity sensor at T3
             return SEQ_SUCCESS;
         }
         
@@ -249,9 +259,10 @@ SequencerError_t sequencerExecute(SequencerState_t* state,
     // Parameter validation first (critical for flight software)
     if((state == NULL) || (output == NULL)) {
         return SEQ_ERROR_INVALID_PARAM;
+        // Early exit on error
     }
     //clear all outputs first (safe starting state)
-    memset(output, 0, sizeof(SequencerOutput_t));
+    memset(output, 0, sizeof(SequencerOutput_t)); // Safe starting state
 
     //Increment main clock if G-switch is active
     if (state->isGswitchActive){
