@@ -48,7 +48,7 @@ void test_transition_T0_to_T1_byTimeout(void) {
     sequencerSetGswitch(&state, true);
 
     bool transition_happened = false;
-    uint16_t high_roll_rate = 100; // 10.0 rps > threshold
+    float high_roll_rate = 10.0f; // 10.0 rps > threshold
 
     for (uint32_t i = 0; i < (SEQ_T1_WINDOW_OUT_TIME + 5); ++i) {
         sequencerExecute(&state, high_roll_rate, 0, &output);
@@ -74,7 +74,7 @@ void test_fullMission_nominalPath(void) {
     sequencerSetGswitch(&state, true);
 
     // --- Test Simulation Variables ---
-    uint16_t roll_rate = 100; // Start with high roll rate (10.0 rps)
+    float roll_rate = 10.0f; // Start with high roll rate (10.0 rps)
     uint32_t t_go = 0;
     int test_phase = 0; // Use a simple state machine for the test itself
 
@@ -84,11 +84,11 @@ void test_fullMission_nominalPath(void) {
         // --- CORRECTED: Set inputs for the NEXT cycle based on the CURRENT cycle count ---
         // To affect cycle 11, we must set the input when the clock is 10.
         if (state.mainClockCycles == 10) {
-            roll_rate = 60; // 6.0 rps < 7.0 rps
+            roll_rate = 6.0f; // 6.0 rps < 7.0 rps
         }
         // To affect cycle 20, we must set the input when the clock is 19.
         if (state.mainClockCycles == 19) {
-            roll_rate = 15; // 1.5 rps < 2.0 rps
+            roll_rate = 1.5f; // 1.5 rps < 2.0 rps
         }
         // To affect cycle 300, we must set the input when the clock is 299.
         if (state.mainClockCycles == 299) {

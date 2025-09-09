@@ -79,14 +79,14 @@ SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive)
 }
 
 // Helper function to check the roll rate condition
-static bool isRollRateOkForT1(uint16_t rollRateFp)
+static bool isRollRateOkForT1(float rollRateFp)
 {
     // Roll rate threshold for T1 is 7.0 rps (70 in fixed point)
     return (rollRateFp <= SEQ_ROLL_RATE_T1_THRESHOLD);
 }
 
 static SequencerError_t processT1Logic(SequencerState_t* state,
-                                        uint16_t rollRateFp,
+                                        float rollRateFp,
                                         SequencerOutput_t* output)
 {
     //First check if T1 window is out (T > T1WindowOut)
@@ -133,12 +133,12 @@ static SequencerError_t processT1Logic(SequencerState_t* state,
 }
 
 // Helper function to check the roll rate condition for T2
-static bool isRollRateOkForT2(uint16_t rollRateFp)
+static bool isRollRateOkForT2(float rollRateFp)
 {
     return (rollRateFp <= SEQ_ROLL_RATE_T2_THRESHOLD);
 }
 static SequencerError_t processT2Logic(SequencerState_t* state,
-                                    uint16_t rollRateFp,
+                                    float rollRateFp,
                                     SequencerOutput_t* output)
 {
     // First check if FSA flag is already sent
@@ -252,7 +252,7 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
 }
 
 SequencerError_t sequencerExecute(SequencerState_t* state,
-                                 uint16_t rollRateFp,
+                                 float rollRateFp,
                                  uint32_t tGo,
                                  SequencerOutput_t* output )
 {

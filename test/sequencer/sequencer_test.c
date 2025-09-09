@@ -22,7 +22,7 @@ int main(void)
 
     // --- Simulation Inputs ---
     // These variables represent the "real world" for the sequencer
-    uint16_t rollRateFp = 60000; // Start with a high roll rate of 100.0 rps (*10)
+    float rollRateFp = 6000.0f; // Start with a high roll rate of 6000.0 rps
     uint32_t tGo = 0;           // Guidance tGo signal is initially 0
 
     // --- Interactive Launch ---
@@ -44,9 +44,9 @@ int main(void)
 
         // 1. Simulate roll rate decay after launch
         // Slowly decays until it hits a stable 1.8 rps
-        if (state.isT0Set && rollRateFp > 0)
+        if (state.isT0Set && rollRateFp > 0.0f)
         {
-            rollRateFp = (uint16_t)(rollRateFp * 0.95); // a 5% decay per cycle
+            rollRateFp *= 0.95f; //a 5% exponential decay per cycle.
         }
 
         // 2. Simulate the guidance signal becoming ready after 25 seconds
@@ -59,9 +59,9 @@ int main(void)
         sequencerExecute(&state, rollRateFp, tGo, &output);
 
         // --- Print the Status for Observation ---
-        printf("Cycle: %-5u | Roll Rate: %4.1f rps | ",
+        printf("Cycle: %-5u | Roll Rate: %6.1f rps | ",
                state.mainClockCycles,
-               (double)rollRateFp / 10.0);
+               (double)rollRateFp);
 
         // Print the current active phase
         if (state.isT3Set)

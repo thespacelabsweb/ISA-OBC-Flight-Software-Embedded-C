@@ -19,8 +19,8 @@
 
 // Datatypes
 #define SEQ_CONFIRMATION_CYCLES    3U
-#define SEQ_ROLL_RATE_T1_THRESHOLD 70U  // 7.O rps in fixed point
-#define SEQ_ROLL_RATE_T2_THRESHOLD 20U  // 2.0 rps in fixed point
+#define SEQ_ROLL_RATE_T1_THRESHOLD 7.0f  // 7.O rps 
+#define SEQ_ROLL_RATE_T2_THRESHOLD 2.0f  // 2.0 rps
 
 // Timing Configuration
 #define SEQ_T1_WINDOW_IN_TIME      10U  // T1 window starts at T0 + 0.1s (l0 cycles)
@@ -93,7 +93,7 @@ typedef struct {
 
 // Main sequencer function called every minor cycle
 SequencerError_t sequencerExecute(SequencerState_t* state, 
-                                    uint16_t rollRateFp, //Roll rate *10
+                                    float rollRateFp, //Roll rate in RPS
                                     uint32_t tGo,   //Form guidance system
                                     SequencerOutput_t* output);
 //Intialize sequencer at system startup
