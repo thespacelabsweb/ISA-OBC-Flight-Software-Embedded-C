@@ -168,7 +168,7 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
             // Control flag after defined delay
             state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY;
             // GUID_START flag after control flag delay
-            state->guidStartFlagSendTime = state->controlFlagSendTime + SEQ_GUID_START_FLAG_DELAY;
+            state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY;
 
             return SEQ_SUCCESS;
         }
@@ -189,7 +189,7 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
                     // Calculate flag send times for T3 phase
                     state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY; // Control flag after defined delay
                     // GUID_START flag after control flag delay
-                    state->guidStartFlagSendTime = state->controlFlagSendTime + SEQ_GUID_START_FLAG_DELAY;
+                    state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY; // T2 + delta t for guidance flag send delay
                     
                     return SEQ_SUCCESS;
                 }
