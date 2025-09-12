@@ -6,10 +6,10 @@ CFLAGS = -Wall -Wextra -Werror -pedantic -std=c99 -O2 -g
 LDFLAGS = -lm
 
 # Directories
-SRC_DIR = src
-INCLUDE_DIR = include
+SRC_DIR = ../../src
+INCLUDE_DIR = ../../include
 BUILD_DIR = build
-TEST_DIR = test
+TEST_DIR = .
 
 # Source files
 MATH_SRC = $(wildcard $(SRC_DIR)/math/*.c)
@@ -18,8 +18,7 @@ NAVIGATION_SRC = $(wildcard $(SRC_DIR)/navigation/*.c)
 DAP_SRC = $(wildcard $(SRC_DIR)/dap/*.c)
 SEQUENCER_SRC = $(wildcard $(SRC_DIR)/sequencer/*.c)
 HAL_SRC = $(wildcard $(SRC_DIR)/hal/*.c)
-MAIN_SRC = main.c
-
+GUIDANCE_TEST_SRC = guidance.c
 
 # Object files
 MATH_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(MATH_SRC))
@@ -28,17 +27,13 @@ NAVIGATION_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(NAVIGATION_SRC))
 DAP_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(DAP_SRC))
 SEQUENCER_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SEQUENCER_SRC))
 HAL_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(HAL_SRC))
-MAIN_OBJ = $(BUILD_DIR)/main.o      
+GUIDANCE_TEST_OBJ = $(BUILD_DIR)/guidance.o
 
 # All object files
-OBJS = $(MATH_OBJ) $(GUIDANCE_OBJ) $(NAVIGATION_OBJ) $(DAP_OBJ) $(SEQUENCER_OBJ) $(HAL_OBJ) $(MAIN_OBJ)
-
-# Test files
-TEST_SRC = $(wildcard $(TEST_DIR)/*.c)
-TEST_BINS = $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/test_%,$(TEST_SRC))
+OBJS = $(MATH_OBJ) $(GUIDANCE_OBJ) $(NAVIGATION_OBJ) $(DAP_OBJ) $(SEQUENCER_OBJ) $(HAL_OBJ)
 
 # Target executable
-TARGET = $(BUILD_DIR)/isa_flight_software
+TARGET = $(BUILD_DIR)/guidance_test
 
 # Default target
 all: directories $(TARGET)
@@ -52,14 +47,13 @@ directories:
 	@mkdir -p $(BUILD_DIR)/dap
 	@mkdir -p $(BUILD_DIR)/sequencer
 	@mkdir -p $(BUILD_DIR)/hal
-	@mkdir -p $(BUILD_DIR)/test
 
-# Compile main program
-$(TARGET): $(OBJS)
+# Compile guidance test
+$(TARGET): $(GUIDANCE_TEST_OBJ) $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Compile main.c
-$(BUILD_DIR)/main.o: $(MAIN_SRC)
+# Compile guidance test file
+$(BUILD_DIR)/guidance.o: $(GUIDANCE_TEST_SRC)
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
 
 # Compile math source files
@@ -86,23 +80,12 @@ $(BUILD_DIR)/sequencer/%.o: $(SRC_DIR)/sequencer/%.c
 $(BUILD_DIR)/hal/%.o: $(SRC_DIR)/hal/%.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
 
-# Compile and run tests
-tests: directories $(TEST_BINS)
-	@for test in $(TEST_BINS); do \
-		echo "Running $$test"; \
-		./$$test; \
-	done
-
-# Compile test files
-$(BUILD_DIR)/test_%: $(TEST_DIR)/%.c $(filter-out $(BUILD_DIR)/main.o,$(OBJS))
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -o $@ $^ $(LDFLAGS)
-
 # Clean build files
 clean:
 	rm -rf $(BUILD_DIR)
 
-# Run the program
+# Run the guidance test
 run: all
 	./$(TARGET)
 
-.PHONY: all clean run tests directories
+.PHONY: all clean run directories

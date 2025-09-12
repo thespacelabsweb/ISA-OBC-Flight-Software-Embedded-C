@@ -1,7 +1,7 @@
 /******************************************************************************
  * ISA Flight Software
  * 
- * File: main.c
+ * File: guidance.c
  * Description: Main entry point for the guidance system test
 
 
@@ -12,11 +12,11 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "include/common/types.h"
-#include "include/common/config.h"
-#include "include/math/vector3.h"
-#include "include/math/coordinate_transforms.h"
-#include "include/guidance/guidance.h"
+#include "../../include/common/types.h"
+#include "../../include/common/config.h"
+#include "../../include/math/vector3.h"
+#include "../../include/math/coordinate_transforms.h"
+#include "guidance.h"
 
 int main(void) {
     /* Test case parameters from MATLAB Test_OBG.m */
