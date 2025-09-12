@@ -31,27 +31,27 @@ SequencerError_t sequencerInit(SequencerState_t* state)
     state->isT3Set = false;
 
     // Intialize all flags to false
-    state->isFsaFlagSent = false;
-    state->isCanardFlagSent = false;
-    state->isControlFlagSent = false;
+    state->isFsaActivateFlagSent = false;
+    state->isCanardDeployFlagSent = false;
+    state->isCanardControlFlagSent = false;
     state->isGuidStartFlagSent = false;
 
     // Initialize counters and timers to zero
     state->mainClockCycles = 0U;
-    state->fsaFlagSendTime = 0U;
-    state->canardFlagSendTime = 0U;
-    state->controlFlagSendTime = 0U;
+    state->fsaActivateFlagSendTime = 0U;
+    state->canardDeployFlagSendTime = 0U;
+    state->canardControlFlagSendTime = 0U;
     state->guidStartFlagSendTime = 0U;
     state->t1RollRateCount = 0U;
     state->t2RollRateCount = 0U;
 
     // G-switch starts inactive
-    state->isGswitchActive= false;
+    state->isOBCReset= false;
 
     return SEQ_SUCCESS;
 }
 
-SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive)
+SequencerError_t sequencerSetOBCReset(SequencerState_t* state, bool isActive)
 {
     // Parameter validation
     if (state == NULL) {
@@ -59,7 +59,7 @@ SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive)
     }
 
     // Set G-switch state
-    state->isGswitchActive = isActive;
+    state->isOBCReset= isActive;
 
     if (isActive) {
         //g switch activation triggers the start of timing
@@ -96,10 +96,10 @@ static SequencerError_t processT1Logic(SequencerState_t* state,
         output->setT1 = true;
         
         // Calculate flag send times for T2 phase
-        state->fsaFlagSendTime = state->mainClockCycles;
+        state->fsaActivateFlagSendTime = state->mainClockCycles;
 
         // Delay canard flag by defined delay after FSA flag
-        state->canardFlagSendTime = state->fsaFlagSendTime + SEQ_CANARD_FLAG_DELAY;
+        state->canardDeployFlagSendTime = state->fsaActivateFlagSendTime + SEQ_CANARD_DEPLOY_FLAG_DELAY ;
         
         return SEQ_SUCCESS;
 
@@ -118,8 +118,8 @@ static SequencerError_t processT1Logic(SequencerState_t* state,
                 output->setT1 = true; // command to set T1
                 
                 // Calculate flag send times for T2 phase
-                state->fsaFlagSendTime = state->mainClockCycles;
-                state->canardFlagSendTime = state->fsaFlagSendTime + SEQ_CANARD_FLAG_DELAY;
+                state->fsaActivateFlagSendTime = state->mainClockCycles;
+                state->canardDeployFlagSendTime = state->fsaActivateFlagSendTime + SEQ_CANARD_DEPLOY_FLAG_DELAY;
                 
                 return SEQ_SUCCESS;
             }
@@ -142,31 +142,31 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
                                     SequencerOutput_t* output)
 {
     // First check if FSA flag is already sent
-    if (!state->isFsaFlagSent) {
+    if (!state->isFsaActivateFlagSent) {
         // Check if its time to send FSA flag
-        if (state->mainClockCycles > state->fsaFlagSendTime) {
-            output->sendFsaFlag = true;
-            state->isFsaFlagSent = true;
+        if (state->mainClockCycles > state->fsaActivateFlagSendTime) {
+            output->fsaActivateFlag = true;
+            state->isFsaActivateFlagSent = true;
             return SEQ_SUCCESS;
         }
-    } else if (!state->isCanardFlagSent) {
+    } else if (!state->isCanardDeployFlagSent) {
         // FSA flag sent, check if its time to send canard flag
-        if (state->mainClockCycles > state->canardFlagSendTime) {
-            output->sendCanardFlag = true;
-            state->isCanardFlagSent = true;
+        if (state->mainClockCycles > state->canardDeployFlagSendTime) {
+            output->canardDeployFlag = true;
+            state->isCanardDeployFlagSent = true;
             return SEQ_SUCCESS;
         }
     } else {
         // both flags sent, check T2 window conditions
         // First check if T2 window is out
-        if (state->mainClockCycles > (state->fsaFlagSendTime + SEQ_T2_WINDOW_OUT_TIME)) {
+        if (state->mainClockCycles > (state->fsaActivateFlagSendTime + SEQ_T2_WINDOW_OUT_TIME)) {
             // window out - Set T2 immediately
             state->isT2Set = true;
             output->setT2 = true;
 
             // Calculate flag send times for T3 phase
             // Control flag after defined delay
-            state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY;
+            state->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_ON_FLAG_DELAY;
             // GUID_START flag after control flag delay
             state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY;
 
@@ -174,7 +174,7 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
         }
 
         // Check it is in the T2 window
-        if (state->mainClockCycles > (state->fsaFlagSendTime + SEQ_T2_WINDOW_IN_TIME)) {
+        if (state->mainClockCycles > (state->fsaActivateFlagSendTime + SEQ_T2_WINDOW_IN_TIME)) {
             // check roll rate <= 2rps
             if (isRollRateOkForT2(rollRateFp)) {
                 // Roll rate good - increment counter
@@ -187,7 +187,7 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
                     output->setT2 = true;
 
                     // Calculate flag send times for T3 phase
-                    state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY; // Control flag after defined delay
+                    state->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_ON_FLAG_DELAY; // Control flag after defined delay
                     // GUID_START flag after control flag delay
                     state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY; // T2 + delta t for guidance flag send delay
                     
@@ -206,13 +206,13 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
                                      SequencerOutput_t* output)
 {
     // First check if Control flag is already sent
-    if (!state->isControlFlagSent) {
+    if (!state->isCanardControlFlagSent) {
         // Check if it's time to send control flag
         // Control flag is sent after T2 + defined delay
-        if (state->mainClockCycles > state->controlFlagSendTime) {
+        if (state->mainClockCycles > state->canardControlFlagSendTime) {
             // Send control flag
-            output->sendControlFlag = true; 
-            state->isControlFlagSent = true;
+            output->canardControlFlag = true; 
+            state->isCanardControlFlagSent = true;
             return SEQ_SUCCESS;
         }
     } else if (!state->isGuidStartFlagSent) {
@@ -226,7 +226,7 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
         // Both flags sent, check T3 window conditions
         
         // First check if T3 window is out
-        if (state->mainClockCycles > (state->controlFlagSendTime + SEQ_T3_WINDOW_OUT_TIME)) {
+        if (state->mainClockCycles > (state->canardControlFlagSendTime + SEQ_T3_WINDOW_OUT_TIME)) {
             // T3 window out - set T3 and enable proximity sensor
             state->isT3Set = true;
             output->setT3 = true;
@@ -235,7 +235,7 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
         }
         
         // Check if in T3 window
-        if (state->mainClockCycles > (state->controlFlagSendTime + SEQ_T3_WINDOW_IN_TIME)) {
+        if (state->mainClockCycles > (state->canardControlFlagSendTime + SEQ_T3_WINDOW_IN_TIME)) {
             // Check tGo from guidance
             if (tGo > 0U) {  // tGo parameter indicates guidance is ready for T3
                 // Set T3 and enable proximity sensor
@@ -265,7 +265,7 @@ SequencerError_t sequencerExecute(SequencerState_t* state,
     memset(output, 0, sizeof(SequencerOutput_t)); // Safe starting state
 
     //Increment main clock if G-switch is active
-    if (state->isGswitchActive){
+    if (state->isOBCReset){
         state->mainClockCycles++;
     }
     // Priority-based logic for ISA

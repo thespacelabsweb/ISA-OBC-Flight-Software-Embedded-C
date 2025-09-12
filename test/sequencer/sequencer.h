@@ -33,8 +33,8 @@
 #define SEQ_T3_WINDOW_OUT_TIME     500U //T3 window ends at T1 + 0.1s -> T1 + 5 secs
 
                                         // Disregard the comments vineetha chechi and ananthu chnaged it for testing purposes           
-#define SEQ_CANARD_FLAG_DELAY      0U   // No delay after FSA flag (0 cycles) //changed
-#define SEQ_CONTROL_FLAG_DELAY     0U  // Delay after T2 set (10 cycles = 0.1s) // changed
+#define SEQ_CANARD_DEPLOY_FLAG_DELAY      0U   // No delay after FSA flag (0 cycles) //changed
+#define SEQ_CANARD_CONTROL_ON_FLAG_DELAY     0U  // Delay after T2 set (10 cycles = 0.1s) // changed
 #define SEQ_GUID_START_FLAG_DELAY  200U // Delay after Control flag (200 cycles = 2s) //changed
 
 
@@ -54,16 +54,16 @@ typedef struct {
     bool isT3Set;
 
     // Flags sent check
-    bool isFsaFlagSent;
-    bool isCanardFlagSent;
-    bool isControlFlagSent;
+    bool isFsaActivateFlagSent;
+    bool isCanardDeployFlagSent;
+    bool isCanardControlFlagSent;
     bool isGuidStartFlagSent;
 
     //Timing - tells at when events happen
     uint32_t mainClockCycles;      // counts minor cycles since launch
-    uint32_t fsaFlagSendTime;      // when to send the FSA flag
-    uint32_t canardFlagSendTime;   // when to send canard flag
-    uint32_t controlFlagSendTime;  // when to send control flag
+    uint32_t fsaActivateFlagSendTime;      // when to send the FSA flag
+    uint32_t canardDeployFlagSendTime;   // when to send canard flag
+    uint32_t canardControlFlagSendTime;  // when to send control flag
     uint32_t guidStartFlagSendTime; // when to send guidance start flag
 
     // Roll rate confirmation
@@ -71,15 +71,15 @@ typedef struct {
     uint8_t t2RollRateCount;
 
     // System Status
-    bool isGswitchActive;
+    bool isOBCReset;
 } SequencerState_t;
 
 // Output structure - what sequencer tells other systems what to do
 typedef struct {
     // Flags to send
-    bool sendFsaFlag;              // Changed from fsaFlag
-    bool sendCanardFlag;           // Changed from canardFlag
-    bool sendControlFlag;          // Changed from controlFlag
+    bool fsaActivateFlag;              // Changed from fsaFlag
+    bool canardDeployFlag;           // Changed from canardFlag
+    bool canardControlFlag;          // Changed from controlFlag
     bool sendGuidStartFlag;        // Changed from guidStartFlag
     bool enableProximitySensor;    // Changed from proximitySensorFlag
 
@@ -99,7 +99,7 @@ SequencerError_t sequencerExecute(SequencerState_t* state,
 //Intialize sequencer at system startup
 SequencerError_t sequencerInit(SequencerState_t* state);
 
-//Set G-Switch activation (called when launch is detected)
-SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive); 
+//Set OBC Reset (called when launch is detected)
+SequencerError_t sequencerSetOBCReset(SequencerState_t* state, bool isActive); 
 
 #endif /* SEQUENCER_H */
