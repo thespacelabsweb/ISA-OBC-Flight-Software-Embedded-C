@@ -35,6 +35,7 @@
                                         // Disregard the comments vineetha chechi and ananthu chnaged it for testing purposes           
 #define SEQ_CANARD_DEPLOY_FLAG_DELAY      0U   // No delay after FSA flag (0 cycles) //changed
 #define SEQ_CANARD_CONTROL_ON_FLAG_DELAY     0U  // Delay after T2 set (10 cycles = 0.1s) // changed
+#define SEQ_FSA_FLAG_DELAY                 0U // delay for FSA flag if there is any
 #define SEQ_GUID_START_FLAG_DELAY  200U // Delay after Control flag (200 cycles = 2s) //changed
 
 
@@ -61,6 +62,10 @@ typedef struct {
 
     //Timing - tells at when events happen
     uint32_t mainClockCycles;      // counts minor cycles since launch
+    uint32_t t1SetTime;            // when T1 was set
+    uint32_t t2SetTime;            // when T2 was set
+    uint32_t t3SetTime;            // when T3 was set
+
     uint32_t fsaActivateFlagSendTime;      // when to send the FSA flag
     uint32_t canardDeployFlagSendTime;   // when to send canard flag
     uint32_t canardControlFlagSendTime;  // when to send control flag

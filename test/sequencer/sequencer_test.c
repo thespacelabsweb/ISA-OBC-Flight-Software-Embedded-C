@@ -82,7 +82,7 @@ int main(void)
         if (output.canardControlFlag)
             printf("Canard Control Flag ");
         if (output.sendGuidStartFlag)
-            printf("Guidance start Flag ");
+            printf(",,m,,,Guidance start Flag ");
         if (output.enableProximitySensor)
             printf("Proximity Enable Flag ");
         printf("]\n");
