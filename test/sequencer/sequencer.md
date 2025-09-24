@@ -14,4 +14,10 @@ if the conditions to set the T1 window is met. it checks whether the FSA flag is
 
 if t1 is not set it will check whether the T0 is set, the TO time starts when gswitch is active and obc is reset, if it is no it will exit, it it is yes it will check whether the t1 window is out ,the logic for checking the window is current time > t1 window out if it is yes, it will set T1 and exit. if it is not window out , it will check whether it is window in the logic for this is current time > T1 window in if it is no ,it exit and enter another cycle and if it is yes it will check the roll rate is less than or equal to 7rps , increment count, . check if count = 3, if yes set t1. if it fails it resets the counter and check again in next minor cycle, until the condition is met, then t1 is set and it will exit
 
+C:\Users\SPACELABS\Desktop\Projects\ISA Flight Software\test\guidance\guidance old c code in this folder there is the code for guidance, this code directly converted from matlab code to C simulation code. we have to make it misra c and flight software standards. make it ready for development we have to make 2 files first flight software testing module guidance guidance.c and guidance.h and a testing simulation harness guidance_test.c .. tell me how to acheive this., you give me tnhe code in parts and explain it to me each parts i will copy paste or type it. if you have any questions ask me yes or no questions
 
+2. use this from test/guidance/guidance old c code/ ..
+3. it should be flight software ready isolated module. in later we can link each modules.
+4. old approach is fine
+
+just refactor code in test\guidance\guidance old c code to my requirements the code in test/sequencer is done in flightsoftware standards

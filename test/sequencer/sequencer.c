@@ -150,6 +150,7 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
         // Window expired - set t2 immediately
         state->isT2Set = true;
         output->setT2 = true;
+        state->t2SetTime = state->mainClockCycles; // Record T2 set time
         // Schedule the Canard control flag
         state->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_ON_FLAG_DELAY;
         return SEQ_SUCCESS;
@@ -164,8 +165,9 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
                 // Set T2
                 state->isT2Set = true;
                 output->setT2 = true;
+                state->t2SetTime = state->mainClockCycles; // Record T2 set time
                 // Schedule the canard control flag,
-                state ->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_FLAG_DELAY;
+                state->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_ON_FLAG_DELAY;
                 return SEQ_SUCCESS;
             }
         } else {
@@ -188,7 +190,7 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
 {
     // wait for the scheduled time to send the Canard Control Flag.
     if (!state->isCanardControlFlagSent) {
-        if (state->mainClockCycles > state->canardControlFlagSendTime {
+        if (state->mainClockCycles > state->canardControlFlagSendTime) {
             output->canardControlFlag = true;
             state->isCanardControlFlagSent = true;
 
@@ -202,16 +204,21 @@ static SequencerError_t processT3Logic(SequencerState_t* state,
         // Check if its time to send the FSA flag.
         if (!state->isFsaActivateFlagSent && (state->mainClockCycles > state->fsaActivateFlagSendTime)) {
             output->fsaActivateFlag = true;
-            state->isGuidStartFlagSent = true;
+            state->isFsaActivateFlagSent = true;
         }
-        // check if it's tome to send the Guidance Start Flag.
+        // check if it's time to send the Guidance Start Flag.
         if (!state->isGuidStartFlagSent && (state->mainClockCycles > state->guidStartFlagSendTime)) {
+            output->sendGuidStartFlag = true;
+            state->isGuidStartFlagSent = true;
             state->isT3Set = true;
             output->setT3 = true;
-            ouput->enableProximitySensor = true;
+            state->t3SetTime = state->mainClockCycles; // Record T3 set time
+            output->enableProximitySensor = true;
             return SEQ_SUCCESS;
         }
     }
+    
+    return SEQ_SUCCESS;
 }
 //T3 logic ends
 
