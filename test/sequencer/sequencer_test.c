@@ -26,14 +26,14 @@ int main(void)
     uint32_t tGo = 0;           // Guidance tGo signal is initially 0
 
     // --- Interactive Launch ---
-    printf("Projectile is in PRE-LAUNCH state. Waiting for launch command.\n");
+    printf("Projectile is in PRE-LAUNCH state. Waiting for OBC Reset.\n");
     printf("Fire the Projectile? (y/n): ");
     while (getchar() != 'y')
     {
         // Wait for user to press 'y'
     }
     printf("\nLaunch Command Received! T=0\n\n");
-    sequencerSetGswitch(&state, true); // Trigger the launch
+    sequencerSetOBCReset(&state, true); // Trigger the launch
 
     // --- Main Simulation Loop ---
     int total_cycles = SIMULATION_DURATION_S * (1000 / SIMULATION_STEP_MS);
@@ -75,16 +75,16 @@ int main(void)
 
         // Print any commands (outputs) that were generated this cycle
         printf("Commands: [ ");
-        if (output.sendFsaFlag)
-            printf("SendFSA ");
-        if (output.sendCanardFlag)
-            printf("SendCanard ");
-        if (output.sendControlFlag)
-            printf("SendControl ");
+        if (output.fsaActivateFlag)
+            printf("FSA Activate Flag ");
+        if (output.canardDeployFlag)
+            printf("Canard Deploy Flag ");
+        if (output.canardControlFlag)
+            printf("Canard Control Flag ");
         if (output.sendGuidStartFlag)
-            printf("SendGuidStart ");
+            printf("Guidance start Flag ");
         if (output.enableProximitySensor)
-            printf("EnableProx ");
+            printf("Proximity Enable Flag ");
         printf("]\n");
 
         // Stop the simulation if the final phase is complete

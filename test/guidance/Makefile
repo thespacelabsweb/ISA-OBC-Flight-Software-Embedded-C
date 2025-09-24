@@ -1,91 +1,71 @@
-# ISA Flight Software Makefile
+# ISA Flight Software - Guidance Module Makefile
+# Builds and tests the guidance module with all dependencies
 
-# Compiler settings
+# Compiler settings (GCC for host testing)
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -pedantic -std=c99 -O2 -g
-LDFLAGS = -lm
-
-# Directories
-SRC_DIR = ../../src
-INCLUDE_DIR = ../../include
-BUILD_DIR = build
-TEST_DIR = .
+CFLAGS = -Wall -Wextra -std=c99 -O2 -g -lm
+INCLUDES = -I. -I../../include/common
 
 # Source files
-MATH_SRC = $(wildcard $(SRC_DIR)/math/*.c)
-GUIDANCE_SRC = $(wildcard $(SRC_DIR)/guidance/*.c)
-NAVIGATION_SRC = $(wildcard $(SRC_DIR)/navigation/*.c)
-DAP_SRC = $(wildcard $(SRC_DIR)/dap/*.c)
-SEQUENCER_SRC = $(wildcard $(SRC_DIR)/sequencer/*.c)
-HAL_SRC = $(wildcard $(SRC_DIR)/hal/*.c)
-GUIDANCE_TEST_SRC = guidance.c
+VECTOR3_SRC = vector3.c
+COORDINATE_TRANSFORMS_SRC = coordinate_transforms.c
+MATH_UTILS_SRC = math_utils.c
+GUIDANCE_SRC = guidance.c
+GUIDANCE_TEST_SRC = guidance_test.c
 
 # Object files
-MATH_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(MATH_SRC))
-GUIDANCE_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(GUIDANCE_SRC))
-NAVIGATION_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(NAVIGATION_SRC))
-DAP_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(DAP_SRC))
-SEQUENCER_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SEQUENCER_SRC))
-HAL_OBJ = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(HAL_SRC))
-GUIDANCE_TEST_OBJ = $(BUILD_DIR)/guidance.o
-
-# All object files
-OBJS = $(MATH_OBJ) $(GUIDANCE_OBJ) $(NAVIGATION_OBJ) $(DAP_OBJ) $(SEQUENCER_OBJ) $(HAL_OBJ)
+VECTOR3_OBJ = vector3.o
+COORDINATE_TRANSFORMS_OBJ = coordinate_transforms.o
+MATH_UTILS_OBJ = math_utils.o
+GUIDANCE_OBJ = guidance.o
+GUIDANCE_TEST_OBJ = guidance_test.o
 
 # Target executable
-TARGET = $(BUILD_DIR)/guidance_test
+TARGET = guidance_test
 
 # Default target
-all: directories $(TARGET)
+all: $(TARGET)
 
-# Create build directories
-directories:
-	@mkdir -p $(BUILD_DIR)
-	@mkdir -p $(BUILD_DIR)/math
-	@mkdir -p $(BUILD_DIR)/guidance
-	@mkdir -p $(BUILD_DIR)/navigation
-	@mkdir -p $(BUILD_DIR)/dap
-	@mkdir -p $(BUILD_DIR)/sequencer
-	@mkdir -p $(BUILD_DIR)/hal
+# Build the guidance test executable
+$(TARGET): $(VECTOR3_OBJ) $(COORDINATE_TRANSFORMS_OBJ) $(MATH_UTILS_OBJ) $(GUIDANCE_OBJ) $(GUIDANCE_TEST_OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(VECTOR3_OBJ) $(COORDINATE_TRANSFORMS_OBJ) $(MATH_UTILS_OBJ) $(GUIDANCE_OBJ) $(GUIDANCE_TEST_OBJ) -lm
+	@echo "✓ Guidance module build completed successfully"
+
+# Compile vector3 module
+$(VECTOR3_OBJ): $(VECTOR3_SRC) vector3.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(VECTOR3_SRC) -o $(VECTOR3_OBJ)
+
+# Compile coordinate transforms module
+$(COORDINATE_TRANSFORMS_OBJ): $(COORDINATE_TRANSFORMS_SRC) coordinate_transforms.h vector3.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(COORDINATE_TRANSFORMS_SRC) -o $(COORDINATE_TRANSFORMS_OBJ)
+
+# Compile math utils module
+$(MATH_UTILS_OBJ): $(MATH_UTILS_SRC) math_utils.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(MATH_UTILS_SRC) -o $(MATH_UTILS_OBJ)
+
+# Compile guidance module
+$(GUIDANCE_OBJ): $(GUIDANCE_SRC) guidance.h vector3.h coordinate_transforms.h math_utils.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(GUIDANCE_SRC) -o $(GUIDANCE_OBJ)
 
 # Compile guidance test
-$(TARGET): $(GUIDANCE_TEST_OBJ) $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+$(GUIDANCE_TEST_OBJ): $(GUIDANCE_TEST_SRC) guidance.h vector3.h coordinate_transforms.h
+	$(CC) $(CFLAGS) $(INCLUDES) -c $(GUIDANCE_TEST_SRC) -o $(GUIDANCE_TEST_OBJ)
 
-# Compile guidance test file
-$(BUILD_DIR)/guidance.o: $(GUIDANCE_TEST_SRC)
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Compile math source files
-$(BUILD_DIR)/math/%.o: $(SRC_DIR)/math/%.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Compile guidance source files
-$(BUILD_DIR)/guidance/%.o: $(SRC_DIR)/guidance/%.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Compile navigation source files
-$(BUILD_DIR)/navigation/%.o: $(SRC_DIR)/navigation/%.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Compile DAP source files
-$(BUILD_DIR)/dap/%.o: $(SRC_DIR)/dap/%.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Compile sequencer source files
-$(BUILD_DIR)/sequencer/%.o: $(SRC_DIR)/sequencer/%.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Compile HAL source files
-$(BUILD_DIR)/hal/%.o: $(SRC_DIR)/hal/%.c
-	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<
-
-# Clean build files
+# Clean build artifacts
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -f *.o $(TARGET)
+	@echo "✓ Build artifacts cleaned"
 
-# Run the guidance test
-run: all
+# Run the test
+run: $(TARGET)
 	./$(TARGET)
 
-.PHONY: all clean run directories
+# Build and run (default behavior)
+test: all run
+
+# Debug build
+debug: CFLAGS += -DDEBUG
+debug: clean all
+
+.PHONY: all clean run test debug
+

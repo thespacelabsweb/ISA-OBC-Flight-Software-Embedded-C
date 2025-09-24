@@ -31,27 +31,27 @@ SequencerError_t sequencerInit(SequencerState_t* state)
     state->isT3Set = false;
 
     // Intialize all flags to false
-    state->isFsaFlagSent = false;
-    state->isCanardFlagSent = false;
-    state->isControlFlagSent = false;
+    state->isFsaActivateFlagSent = false;
+    state->isCanardDeployFlagSent = false;
+    state->isCanardControlFlagSent = false;
     state->isGuidStartFlagSent = false;
 
     // Initialize counters and timers to zero
     state->mainClockCycles = 0U;
-    state->fsaFlagSendTime = 0U;
-    state->canardFlagSendTime = 0U;
-    state->controlFlagSendTime = 0U;
+    state->fsaActivateFlagSendTime = 0U;
+    state->canardDeployFlagSendTime = 0U;
+    state->canardControlFlagSendTime = 0U;
     state->guidStartFlagSendTime = 0U;
     state->t1RollRateCount = 0U;
     state->t2RollRateCount = 0U;
 
     // G-switch starts inactive
-    state->isGswitchActive= false;
+    state->isOBCReset= false;
 
     return SEQ_SUCCESS;
 }
 
-SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive)
+SequencerError_t sequencerSetOBCReset(SequencerState_t* state, bool isActive)
 {
     // Parameter validation
     if (state == NULL) {
@@ -59,7 +59,7 @@ SequencerError_t sequencerSetGswitch(SequencerState_t* state, bool isActive)
     }
 
     // Set G-switch state
-    state->isGswitchActive = isActive;
+    state->isOBCReset= isActive;
 
     if (isActive) {
         //g switch activation triggers the start of timing
@@ -94,43 +94,47 @@ static SequencerError_t processT1Logic(SequencerState_t* state,
         // Window out - Set T1 Immediately
         state->isT1Set = true;
         output->setT1 = true;
-        
-        // Calculate flag send times for T2 phase
-        state->fsaFlagSendTime = state->mainClockCycles;
+        state->t1SetTime = state->mainClockCycles; // Record T1 recordtime
 
-        // Delay canard flag by defined delay after FSA flag
-        state->canardFlagSendTime = state->fsaFlagSendTime + SEQ_CANARD_FLAG_DELAY;
-        
+        // Send the canard deploy flag if not alraedy sent
+        if (!state->isCanardDeployFlagSent) {
+            output->canardDeployFlag = true;
+            state->isCanardDeployFlagSent = true;
+        }
+
         return SEQ_SUCCESS;
-
     }
-    // Check it is in the T1 Window (T > T1windowIn)
+    // Check for T1 window sensing
     if (state->mainClockCycles > SEQ_T1_WINDOW_IN_TIME) {
-        // Check roll rate <= 7 rps
+        // Check if the roll rate <= 7rps conditions are met
         if (isRollRateOkForT1(rollRateFp)) {
-            // Roll rate good - increment counter
+            //if the roll rate is good increment the confirmation counter
             state->t1RollRateCount++;
 
-            // Check if counter= 3
+            // Check if the condition has been met for the required number of cycles
             if (state->t1RollRateCount >= SEQ_CONFIRMATION_CYCLES) {
-                //Set T1
-                state->isT1Set = true; // transition to T1
-                output->setT1 = true; // command to set T1
-                
-                // Calculate flag send times for T2 phase
-                state->fsaFlagSendTime = state->mainClockCycles;
-                state->canardFlagSendTime = state->fsaFlagSendTime + SEQ_CANARD_FLAG_DELAY;
-                
+                //  Set T1
+                state ->isT1Set = true;
+                output->setT1 = true;
+                state->t1SetTime = state->mainClockCycles;
+
+                //Send the canard deploy flag if not sent
+                if (!state->isCanardDeployFlagSent) {
+                    output->canardDeployFlag = true;
+                    state->isCanardDeployFlagSent = true;
+                }
+
                 return SEQ_SUCCESS;
             }
         } else {
-            // Roll rate not good - reset counter
-            state->t1RollRateCount = 0U;
+            // Roll rate is not within the threshold - reset the counter
+            state ->t1RollRateCount = 0U;
         }
     }
-    // If we get here, conditions not met -exit
     return SEQ_SUCCESS;
 }
+
+// T2 logic starts
 
 // Helper function to check the roll rate condition for T2
 static bool isRollRateOkForT2(float rollRateFp)
@@ -141,116 +145,84 @@ static SequencerError_t processT2Logic(SequencerState_t* state,
                                     float rollRateFp,
                                     SequencerOutput_t* output)
 {
-    // First check if FSA flag is already sent
-    if (!state->isFsaFlagSent) {
-        // Check if its time to send FSA flag
-        if (state->mainClockCycles > state->fsaFlagSendTime) {
-            output->sendFsaFlag = true;
-            state->isFsaFlagSent = true;
-            return SEQ_SUCCESS;
-        }
-    } else if (!state->isCanardFlagSent) {
-        // FSA flag sent, check if its time to send canard flag
-        if (state->mainClockCycles > state->canardFlagSendTime) {
-            output->sendCanardFlag = true;
-            state->isCanardFlagSent = true;
-            return SEQ_SUCCESS;
-        }
-    } else {
-        // both flags sent, check T2 window conditions
-        // First check if T2 window is out
-        if (state->mainClockCycles > (state->fsaFlagSendTime + SEQ_T2_WINDOW_OUT_TIME)) {
-            // window out - Set T2 immediately
-            state->isT2Set = true;
-            output->setT2 = true;
-
-            // Calculate flag send times for T3 phase
-            // Control flag after defined delay
-            state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY;
-            // GUID_START flag after control flag delay
-            state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY;
-
-            return SEQ_SUCCESS;
-        }
-
-        // Check it is in the T2 window
-        if (state->mainClockCycles > (state->fsaFlagSendTime + SEQ_T2_WINDOW_IN_TIME)) {
-            // check roll rate <= 2rps
-            if (isRollRateOkForT2(rollRateFp)) {
-                // Roll rate good - increment counter
-                state->t2RollRateCount++;
-
-                // Check if counter = 3
-                if (state->t2RollRateCount >= SEQ_CONFIRMATION_CYCLES) {
-                    // Set T2
-                    state->isT2Set = true;
-                    output->setT2 = true;
-
-                    // Calculate flag send times for T3 phase
-                    state->controlFlagSendTime = state->mainClockCycles + SEQ_CONTROL_FLAG_DELAY; // Control flag after defined delay
-                    // GUID_START flag after control flag delay
-                    state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY; // T2 + delta t for guidance flag send delay
-                    
-                    return SEQ_SUCCESS;
-                }
-            } else {
-                // Roll rate not good - reset counter
-                state->t2RollRateCount = 0U;
+     // handle the time out conditions
+     if (state->mainClockCycles > (state->t1SetTime + SEQ_T2_WINDOW_OUT_TIME)) {
+        // Window expired - set t2 immediately
+        state->isT2Set = true;
+        output->setT2 = true;
+        state->t2SetTime = state->mainClockCycles; // Record T2 set time
+        // Schedule the Canard control flag
+        state->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_ON_FLAG_DELAY;
+        return SEQ_SUCCESS;
+     }
+     //check the T2 detection window
+     if (state->mainClockCycles > (state->t1SetTime + SEQ_T2_WINDOW_IN_TIME)) {
+        // Check if the roll rate is below the T2 threshold(<= 2 rps).
+        if (isRollRateOkForT2(rollRateFp)) {
+            state->t2RollRateCount++;
+            //check if the roll rate persists for 3 consecutive cycles.
+            if (state->t2RollRateCount >= SEQ_CONFIRMATION_CYCLES) {
+                // Set T2
+                state->isT2Set = true;
+                output->setT2 = true;
+                state->t2SetTime = state->mainClockCycles; // Record T2 set time
+                // Schedule the canard control flag,
+                state->canardControlFlagSendTime = state->mainClockCycles + SEQ_CANARD_CONTROL_ON_FLAG_DELAY;
+                return SEQ_SUCCESS;
             }
+        } else {
+            //Roll rate is not within the threshold - reset the counter .
+            state->t2RollRateCount = 0U;
         }
-    }
+     }
+     return SEQ_SUCCESS;
 }
+
+
+//T2 logic ends
+
+
+//T3 logic starts
 // Implementation of T3 logic
 static SequencerError_t processT3Logic(SequencerState_t* state,
                                      uint32_t tGo,
                                      SequencerOutput_t* output)
 {
-    // First check if Control flag is already sent
-    if (!state->isControlFlagSent) {
-        // Check if it's time to send control flag
-        // Control flag is sent after T2 + defined delay
-        if (state->mainClockCycles > state->controlFlagSendTime) {
-            // Send control flag
-            output->sendControlFlag = true; 
-            state->isControlFlagSent = true;
-            return SEQ_SUCCESS;
-        }
-    } else if (!state->isGuidStartFlagSent) {
-        // Control flag sent, check if it's time to send GUID_START flag
-        if (state->mainClockCycles > state->guidStartFlagSendTime) {
-            output->sendGuidStartFlag = true;
-            state->isGuidStartFlagSent = true;
-            return SEQ_SUCCESS;
+    // wait for the scheduled time to send the Canard Control Flag.
+    if (!state->isCanardControlFlagSent) {
+        if (state->mainClockCycles > state->canardControlFlagSendTime) {
+            output->canardControlFlag = true;
+            state->isCanardControlFlagSent = true;
+
+            // Schedule the flags to be sent
+            state->fsaActivateFlagSendTime = state->mainClockCycles + SEQ_FSA_FLAG_DELAY;
+            state->guidStartFlagSendTime = state->mainClockCycles + SEQ_GUID_START_FLAG_DELAY;
         }
     } else {
-        // Both flags sent, check T3 window conditions
-        
-        // First check if T3 window is out
-        if (state->mainClockCycles > (state->controlFlagSendTime + SEQ_T3_WINDOW_OUT_TIME)) {
-            // T3 window out - set T3 and enable proximity sensor
+        // Control flag has been sent. Now, process the parallel FSA and Guidance flags.
+
+        // Check if its time to send the FSA flag.
+        if (!state->isFsaActivateFlagSent && (state->mainClockCycles > state->fsaActivateFlagSendTime)) {
+            output->fsaActivateFlag = true;
+            state->isFsaActivateFlagSent = true;
+        }
+        // check if it's time to send the Guidance Start Flag.
+        if (!state->isGuidStartFlagSent && (state->mainClockCycles > state->guidStartFlagSendTime)) {
+            output->sendGuidStartFlag = true;
+            state->isGuidStartFlagSent = true;
             state->isT3Set = true;
             output->setT3 = true;
-            output->enableProximitySensor = true; // Enable proximity sensor at T3
+            state->t3SetTime = state->mainClockCycles; // Record T3 set time
+            output->enableProximitySensor = true;
             return SEQ_SUCCESS;
-        }
-        
-        // Check if in T3 window
-        if (state->mainClockCycles > (state->controlFlagSendTime + SEQ_T3_WINDOW_IN_TIME)) {
-            // Check tGo from guidance
-            if (tGo > 0U) {  // tGo parameter indicates guidance is ready for T3
-                // Set T3 and enable proximity sensor
-                state->isT3Set = true;
-                output->setT3 = true;
-                output->enableProximitySensor = true;
-                return SEQ_SUCCESS;
-            }
         }
     }
     
-    // If we get here, conditions not met - exit
     return SEQ_SUCCESS;
 }
+//T3 logic ends
 
+//Window priority
 SequencerError_t sequencerExecute(SequencerState_t* state,
                                  float rollRateFp,
                                  uint32_t tGo,
@@ -265,7 +237,7 @@ SequencerError_t sequencerExecute(SequencerState_t* state,
     memset(output, 0, sizeof(SequencerOutput_t)); // Safe starting state
 
     //Increment main clock if G-switch is active
-    if (state->isGswitchActive){
+    if (state->isOBCReset){
         state->mainClockCycles++;
     }
     // Priority-based logic for ISA
